@@ -38,14 +38,14 @@ export function useMatchesData(
 ): Record<string, unknown> | undefined {
   const matchingRoutes = useMatches();
   const route = useMemo(
-    () => matchingRoutes.find((route) => route.id === id),
+    () => matchingRoutes.find((rt) => rt.id === id),
     [matchingRoutes, id]
   );
   return route?.data;
 }
 
 function isUser(user: any): user is User {
-  return user && typeof user === "object" && typeof user.email === "string";
+  return !!user && typeof user === "object" && typeof (user as { email: unknown }).email === "string";
 }
 
 export function useOptionalUser(): User | undefined {

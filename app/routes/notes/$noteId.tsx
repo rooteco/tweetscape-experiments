@@ -1,11 +1,10 @@
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { Form, useCatch, useLoaderData } from "@remix-run/react";
+import { json, redirect } from "@remix-run/node";
 import invariant from "tiny-invariant";
 
+import { deleteNote, getNote } from "~/models/note.server";
 import type { Note } from "~/models/note.server";
-import { deleteNote } from "~/models/note.server";
-import { getNote } from "~/models/note.server";
 import { requireUserId } from "~/session.server";
 
 type LoaderData = {
@@ -33,7 +32,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 };
 
 export default function NoteDetailsPage() {
-  const data = useLoaderData() as LoaderData;
+  const data = useLoaderData<LoaderData>();
 
   return (
     <div>

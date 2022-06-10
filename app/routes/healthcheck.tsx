@@ -14,7 +14,8 @@ export const loader: LoaderFunction = async ({ request }) => {
     await Promise.all([
       prisma.user.count(),
       fetch(url.toString(), { method: "HEAD" }).then((r) => {
-        if (!r.ok) return Promise.reject(r);
+        if (!r.ok) throw new Error(`${r.toString()} Not OK`);
+        return r;
       }),
     ]);
     return new Response("OK");

@@ -1,15 +1,15 @@
+import * as React from "react";
 import type {
   ActionFunction,
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { Form, Link, useActionData, useSearchParams } from "@remix-run/react";
-import * as React from "react";
+import { json, redirect } from "@remix-run/node";
 
 import { createUserSession, getUserId } from "~/session.server";
-import { verifyLogin } from "~/models/user.server";
 import { safeRedirect, validateEmail } from "~/utils";
+import { verifyLogin } from "~/models/user.server";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const userId = await getUserId(request);
@@ -64,16 +64,14 @@ export const action: ActionFunction = async ({ request }) => {
   return createUserSession({
     request,
     userId: user.id,
-    remember: remember === "on" ? true : false,
+    remember: remember === "on",
     redirectTo,
   });
 };
 
-export const meta: MetaFunction = () => {
-  return {
+export const meta: MetaFunction = () => ({
     title: "Login",
-  };
-};
+  });
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -106,7 +104,6 @@ export default function LoginPage() {
                 ref={emailRef}
                 id="email"
                 required
-                autoFocus={true}
                 name="email"
                 type="email"
                 autoComplete="email"
@@ -171,7 +168,7 @@ export default function LoginPage() {
               </label>
             </div>
             <div className="text-center text-sm text-gray-500">
-              Don't have an account?{" "}
+              Don’t have an account?{" "}
               <Link
                 className="text-blue-500 underline"
                 to={{

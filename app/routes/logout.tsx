@@ -3,10 +3,6 @@ import { redirect } from "@remix-run/node";
 
 import { logout } from "~/session.server";
 
-export const action: ActionFunction = async ({ request }) => {
-  return logout(request);
-};
+export const action: ActionFunction = ({ request }) => logout(request);
 
-export const loader: LoaderFunction = async () => {
-  return redirect("/");
-};
+export const loader: LoaderFunction = () => redirect("/");

@@ -56,7 +56,7 @@ export async function verifyLogin(
     return null;
   }
 
-  const { password: _password, ...userWithoutPassword } = userWithPassword;
+  const { password: ignoredPwd, ...userWithoutPassword } = userWithPassword;
 
   return userWithoutPassword;
 }
