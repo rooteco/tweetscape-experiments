@@ -6,12 +6,15 @@ import type {
 } from 'twitter-api-v2';
 import type { LoaderFunction } from '@remix-run/node';
 import { TwitterApi } from 'twitter-api-v2';
+import { createClient } from 'redis';
 import invariant from 'tiny-invariant';
 
 import { log } from '~/log.server';
 
+const redis = createClient({ url: process.env.REDIS_URL });
 const api = new TwitterApi(process.env.TWITTER_TOKEN as string);
 
+const MAX_AGE_SECONDS = 60 * 60 * 1; // Wait an hour before revalidating.
 const USER_FIELDS: TTweetv2UserField[] = [
   'id',
   'name',
@@ -58,17 +61,28 @@ async function getTweetsFromUsernames(usernames: string[]): Promise<TweetV2[]> {
   return tweets;
 }
 
+let connection: Promise<void>;
+if (!redis.isOpen) connection = redis.connect();
+
 export type LoaderData = TweetV2[];
 
 export const loader: LoaderFunction = async ({ params }) => {
   log.debug(`Verifying params.username ("${params.username}") exists...`);
   invariant(params.username, 'expected params.username');
+  log.debug(`Checking for cached response for @${params.username}...`);
+  await connection;
+  const cachedResponse = await redis.get(params.username);
+  if (cachedResponse) {
+    log.debug(`Found cached response; sending to client...`);
+    return JSON.parse(cachedResponse) as TweetV2[];
+  }
   log.debug(`Fetching api.v2.userByUsername for @${params.username}...`);
   const { data: user } = await api.v2.userByUsername(params.username);
   log.debug(`Fetching api.v2.following for ${user.name}...`);
   const { data: users } = await api.v2.following(user.id);
   log.debug(`Fetching tweets from ${users.length} followed users...`);
   const tweets = await getTweetsFromUsernames(users.map((u) => u.username));
-  log.debug(`Fetched ${tweets.length} tweets; sending to client...`);
+  log.debug(`Fetched ${tweets.length} tweets; caching and sending...`);
+  await redis.setEx(params.username, MAX_AGE_SECONDS, JSON.stringify(tweets));
   return tweets;
 };
