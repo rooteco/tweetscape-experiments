@@ -18,6 +18,7 @@ export default function Feed() {
         action={`/${encodeURIComponent(handle)}/feed`}
       >
         <input
+          required
           type='text'
           placeholder='Enter any Twitter handle'
           value={handle}
