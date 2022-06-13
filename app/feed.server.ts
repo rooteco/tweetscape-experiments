@@ -3,9 +3,10 @@ import type {
   TTweetv2TweetField,
   TTweetv2UserField,
   TweetV2,
+  UserV2,
 } from 'twitter-api-v2';
+import { TwitterApi, TwitterV2IncludesHelper } from 'twitter-api-v2';
 import type { LoaderFunction } from '@remix-run/node';
-import { TwitterApi } from 'twitter-api-v2';
 import { createClient } from 'redis';
 import invariant from 'tiny-invariant';
 
@@ -38,7 +39,7 @@ const TWEET_EXPANSIONS: TTweetv2Expansion[] = [
   'entities.mentions.username',
 ];
 
-async function getTweetsFromUsernames(usernames: string[]): Promise<TweetV2[]> {
+async function getTweetsFromUsernames(usernames: string[]) {
   const queries: string[] = [];
   usernames.forEach((username) => {
     const query = queries[queries.length - 1];
@@ -46,6 +47,7 @@ async function getTweetsFromUsernames(usernames: string[]): Promise<TweetV2[]> {
       queries[queries.length - 1] = `${query} OR from:${username}`;
     else queries.push(`from:${username}`);
   });
+  const users: Record<string, UserV2> = {};
   const tweets: TweetV2[] = [];
   await Promise.all(
     queries.map(async (query) => {
@@ -56,15 +58,22 @@ async function getTweetsFromUsernames(usernames: string[]): Promise<TweetV2[]> {
         'user.fields': USER_FIELDS,
       });
       res.tweets.forEach((tweet) => tweets.push(tweet));
+      const includes = new TwitterV2IncludesHelper(res);
+      includes.users.forEach((user) => {
+        users[user.id] = user;
+      });
     })
   );
-  return tweets;
+  return tweets.map((tweet) => ({
+    ...tweet,
+    author: users[tweet.author_id as string],
+  }));
 }
 
 let connection: Promise<void>;
 if (!redis.isOpen) connection = redis.connect();
 
-export type LoaderData = TweetV2[];
+export type LoaderData = (TweetV2 & { author: UserV2 })[];
 
 export const loader: LoaderFunction = async ({ params }) => {
   log.debug(`Verifying params.username ("${params.username}") exists...`);
