@@ -7,6 +7,7 @@ import type {
 } from 'twitter-api-v2';
 import { TwitterApi, TwitterV2IncludesHelper } from 'twitter-api-v2';
 import type { LoaderFunction } from '@remix-run/node';
+import { autoLink } from 'twitter-text';
 import { createClient } from 'redis';
 import invariant from 'tiny-invariant';
 
@@ -39,6 +40,17 @@ const TWEET_EXPANSIONS: TTweetv2Expansion[] = [
   'entities.mentions.username',
 ];
 
+function html(text: string): string {
+  return autoLink(text, {
+    usernameIncludeSymbol: true,
+    linkAttributeBlock(entity, attrs) {
+      attrs.target = '_blank';
+      attrs.rel = 'noopener noreferrer';
+      attrs.class = 'hover:underline text-blue-500';
+    },
+  });
+}
+
 async function getTweetsFromUsernames(usernames: string[]) {
   const queries: string[] = [];
   usernames.forEach((username) => {
@@ -66,6 +78,7 @@ async function getTweetsFromUsernames(usernames: string[]) {
   );
   return tweets.map((tweet) => ({
     ...tweet,
+    html: html(tweet.text),
     author: users[tweet.author_id as string],
   }));
 }
@@ -73,7 +86,7 @@ async function getTweetsFromUsernames(usernames: string[]) {
 let connection: Promise<void>;
 if (!redis.isOpen) connection = redis.connect();
 
-export type LoaderData = (TweetV2 & { author: UserV2 })[];
+export type LoaderData = (TweetV2 & { author: UserV2; html: string })[];
 
 export const loader: LoaderFunction = async ({ params }) => {
   log.debug(`Verifying params.username ("${params.username}") exists...`);

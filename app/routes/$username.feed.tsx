@@ -33,7 +33,7 @@ export default function Feed() {
       </form>
       <main className='my-8 mx-auto max-w-screen-sm'>
         {tweets.map((tweet) => (
-          <div className='mx-2 my-6 flex'>
+          <div className='mx-2 my-6 flex' key={tweet.id}>
             <img
               className='h-12 w-12 rounded-full border border-gray-300 bg-gray-100'
               alt=''
@@ -72,7 +72,9 @@ export default function Feed() {
                   </a>
                 </h3>
               </header>
-              <p>{tweet.text}</p>
+              <p
+                dangerouslySetInnerHTML={{ __html: tweet.html ?? tweet.text }}
+              />
             </article>
           </div>
         ))}
