@@ -3,7 +3,7 @@ import { useLoaderData } from '@remix-run/react';
 
 type LoaderData = { id: string; title: string; summary: string }[];
 
-export const loader: LoaderFunction = async () => {
+export const loader: LoaderFunction = () => {
   const posts = [
     {
       id: 'see-anyones-feed',

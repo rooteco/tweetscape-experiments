@@ -44,9 +44,11 @@ function html(text: string): string {
   return autoLink(text, {
     usernameIncludeSymbol: true,
     linkAttributeBlock(entity, attrs) {
+      /* eslint-disable no-param-reassign */
       attrs.target = '_blank';
       attrs.rel = 'noopener noreferrer';
       attrs.class = 'hover:underline text-blue-500';
+      /* eslint-enable no-param-reassign */
     },
   });
 }
