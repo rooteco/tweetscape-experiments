@@ -6,15 +6,9 @@ import {
   Scripts,
   ScrollRestoration,
 } from '@remix-run/react';
-import type {
-  LinksFunction,
-  LoaderFunction,
-  MetaFunction,
-} from '@remix-run/node';
-import { json } from '@remix-run/node';
+import type { LinksFunction, MetaFunction } from '@remix-run/node';
 
-import { getUser } from './session.server';
-import tailwindStylesheetUrl from './styles/tailwind.css';
+import tailwindStylesheetUrl from '~/styles/tailwind.css';
 
 export const links: LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -31,15 +25,6 @@ export const meta: MetaFunction = () => ({
   title: 'Tweetscape Experiments',
   viewport: 'width=device-width,initial-scale=1',
 });
-
-type LoaderData = {
-  user: Awaited<ReturnType<typeof getUser>>;
-};
-
-export const loader: LoaderFunction = async ({ request }) =>
-  json<LoaderData>({
-    user: await getUser(request),
-  });
 
 export default function App() {
   return (
