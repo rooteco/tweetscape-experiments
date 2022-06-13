@@ -1,4 +1,4 @@
-import { useLoaderData } from '@remix-run/react';
+import { useLoaderData, useParams } from '@remix-run/react';
 import { useState } from 'react';
 
 import type { LoaderData } from '~/feed.server';
@@ -6,8 +6,9 @@ import type { LoaderData } from '~/feed.server';
 export { loader } from '~/feed.server';
 
 export default function Feed() {
+  const { username } = useParams();
   const tweets = useLoaderData<LoaderData>();
-  const [handle, setHandle] = useState('elonmusk');
+  const [handle, setHandle] = useState(username ?? 'elonmusk');
   return (
     <>
       <form
