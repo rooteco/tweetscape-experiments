@@ -9,29 +9,30 @@ export default function Feed() {
   const tweets = useLoaderData<LoaderData>();
   const [handle, setHandle] = useState('elonmusk');
   return (
-    <main>
-      <div>
+    <>
+      <header className='sticky top-2 my-8 mx-auto flex max-w-sm'>
         <input
           type='text'
           placeholder='Enter any Twitter handle'
           value={handle}
           onChange={(evt) => setHandle(evt.currentTarget.value)}
+          className='flex-1 rounded border-2 border-black px-2 py-1'
         />
         <Link
           to={`/${encodeURIComponent(handle)}/feed`}
-          className='ml-2 inline-block bg-black p-2 text-white'
+          className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'
         >
           See their feed
         </Link>
-      </div>
-      <ul>
+      </header>
+      <ul className='my-8 mx-auto max-w-screen-sm'>
         {tweets.map((tweet) => (
-          <li key={tweet.id}>
+          <li key={tweet.id} className='mx-2 my-6'>
             <b>{tweet.author_id}: </b>
             {tweet.text}
           </li>
         ))}
       </ul>
-    </main>
+    </>
   );
 }
