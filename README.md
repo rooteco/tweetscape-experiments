@@ -96,8 +96,8 @@ Prior to your first deployment, you'll need to do a few things:
 - Create two apps on Fly, one for staging and one for production:
 
   ```sh
-  fly create numbers-station
-  fly create numbers-station-staging
+  fly create tweetscape-experiments
+  fly create tweetscape-experiments-staging
   ```
 
 - Initialize Git.
@@ -117,14 +117,14 @@ Prior to your first deployment, you'll need to do a few things:
 - Add a `SESSION_SECRET` to your fly app secrets, to do this you can run the following commands:
 
   ```sh
-  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app numbers-station
-  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app numbers-station-staging
+  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app tweetscape-experiments
+  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app tweetscape-experiments-staging
   ```
 
   > **Note:** When creating the staging secret, you may get a warning from the Fly CLI that looks like this:
   >
   > ```
-  > WARN app flag 'numbers-station-staging' does not match app name in config file 'numbers-station'
+  > WARN app flag 'tweetscape-experiments-staging' does not match app name in config file 'tweetscape-experiments'
   > ```
   >
   > This simply means that the current directory contains a config that references the production app we created in the first step. Ignore this warning and proceed to create the secret.
@@ -134,11 +134,11 @@ Prior to your first deployment, you'll need to do a few things:
 - Create a database for both your staging and production environments. Run the following:
 
   ```sh
-  fly postgres create --name numbers-station-db
-  fly postgres attach --postgres-app numbers-station-db --app numbers-station
+  fly postgres create --name tweetscape-experiments-db
+  fly postgres attach --postgres-app tweetscape-experiments-db --app tweetscape-experiments
 
-  fly postgres create --name numbers-station-staging-db
-  fly postgres attach --postgres-app numbers-station-staging-db --app numbers-station-staging
+  fly postgres create --name tweetscape-experiments-staging-db
+  fly postgres attach --postgres-app tweetscape-experiments-staging-db --app tweetscape-experiments-staging
   ```
 
   > **Note:** You'll get the same warning for the same reason when attaching the staging database that you did in the `fly set secret` step above. No worries. Proceed!
