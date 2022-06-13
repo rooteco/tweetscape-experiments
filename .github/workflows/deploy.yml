@@ -59,6 +59,16 @@ jobs:
   vitest:
     name: Vitest
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.9.1
