@@ -69,20 +69,21 @@ export type LoaderData = TweetV2[];
 export const loader: LoaderFunction = async ({ params }) => {
   log.debug(`Verifying params.username ("${params.username}") exists...`);
   invariant(params.username, 'expected params.username');
-  log.debug(`Checking for cached response for @${params.username}...`);
+  const username = params.username.toLowerCase();
+  log.debug(`Checking for cached response for @${username}...`);
   await connection;
-  const cachedResponse = await redis.get(params.username);
+  const cachedResponse = await redis.get(username);
   if (cachedResponse) {
     log.debug(`Found cached response; sending to client...`);
     return JSON.parse(cachedResponse) as TweetV2[];
   }
-  log.debug(`Fetching api.v2.userByUsername for @${params.username}...`);
-  const { data: user } = await api.v2.userByUsername(params.username);
+  log.debug(`Fetching api.v2.userByUsername for @${username}...`);
+  const { data: user } = await api.v2.userByUsername(username);
   log.debug(`Fetching api.v2.following for ${user.name}...`);
   const { data: users } = await api.v2.following(user.id);
   log.debug(`Fetching tweets from ${users.length} followed users...`);
   const tweets = await getTweetsFromUsernames(users.map((u) => u.username));
   log.debug(`Fetched ${tweets.length} tweets; caching and sending...`);
-  await redis.setEx(params.username, MAX_AGE_SECONDS, JSON.stringify(tweets));
+  await redis.setEx(username, MAX_AGE_SECONDS, JSON.stringify(tweets));
   return tweets;
 };
