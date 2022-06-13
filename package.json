@@ -4,14 +4,14 @@
   "sideEffects": false,
   "scripts": {
     "build": "run-s 'build:*'",
-    "build:css": "yarn generate:css -- --minify",
+    "build:css": "yarn generate:css --minify",
     "build:remix": "remix build",
     "build:server": "esbuild --platform=node --format=cjs ./server.ts --outdir=build",
     "dev": "run-p 'dev:*'",
     "dev:server": "cross-env NODE_ENV=development node --inspect --require ./node_modules/dotenv/config --require ./mocks ./build/server.js",
-    "dev:build": "cross-env NODE_ENV=development yarn build:server -- --watch",
+    "dev:build": "cross-env NODE_ENV=development yarn build:server --watch",
     "dev:remix": "cross-env NODE_ENV=development remix watch",
-    "dev:css": "cross-env NODE_ENV=development yarn generate:css -- --watch",
+    "dev:css": "cross-env NODE_ENV=development yarn generate:css --watch",
     "docker": "docker-compose up -d",
     "format": "prettier --write .",
     "style": "pretty-quick --staged",
@@ -25,7 +25,7 @@
     "pretest:e2e:run": "yarn build",
     "test:e2e:run": "cross-env PORT=8811 start-server-and-test start:mocks http://localhost:8811 \"npx cypress run\"",
     "typecheck": "tsc -b && tsc -b cypress",
-    "validate": "run-p \"test -- --run\" lint typecheck test:e2e:run"
+    "validate": "run-p \"test --run\" lint typecheck test:e2e:run"
   },
   "eslintIgnore": [
     "/node_modules",
