@@ -30,14 +30,19 @@ export default function Feed() {
           See their feed
         </button>
       </form>
-      <ul className='my-8 mx-auto max-w-screen-sm'>
+      <main className='my-8 mx-auto max-w-screen-sm'>
         {tweets.map((tweet) => (
-          <li key={tweet.id} className='mx-2 my-6'>
-            <b>{tweet.author_id}: </b>
-            {tweet.text}
-          </li>
+          <article key={tweet.id} className='mx-2 my-6'>
+            <header>
+              <h3>
+                {tweet.author.name}{' '}
+                <span className='text-gray-500'>@{tweet.author.username}</span>
+              </h3>
+            </header>
+            <p>{tweet.text}</p>
+          </article>
         ))}
-      </ul>
+      </main>
     </>
   );
 }
