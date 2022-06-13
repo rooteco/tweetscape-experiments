@@ -51,14 +51,14 @@ export default function Index() {
       <section>
         <div>
           <h1 className='text-4xl font-medium'>
-            tweetscape <i className='text-blue-500'>experiments</i>
+            tweetscape<i className='ml-1 text-blue-500'>experiments</i>
           </h1>
           <p className='italic text-gray-500'>
             explorations on better social media exploration
           </p>
         </div>
       </section>
-      <nav className='relative ml-14'>
+      <nav className='relative ml-16'>
         {posts.map((post) => (
           <Link
             key={post.title}
