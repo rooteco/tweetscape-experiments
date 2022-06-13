@@ -40,7 +40,7 @@ const TWEET_EXPANSIONS: TTweetv2Expansion[] = [
   'entities.mentions.username',
 ];
 
-function html(text: string): string {
+export function html(text: string): string {
   return autoLink(text, {
     usernameIncludeSymbol: true,
     linkAttributeBlock(entity, attrs) {
