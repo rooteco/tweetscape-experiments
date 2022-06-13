@@ -91,7 +91,7 @@ export type LoaderData = (TweetV2 & { author: UserV2; html: string })[];
 export const loader: LoaderFunction = async ({ params }) => {
   log.debug(`Verifying params.username ("${params.username}") exists...`);
   invariant(params.username, 'expected params.username');
-  const username = params.username.toLowerCase();
+  const username = params.username.toLowerCase().replace(/^@/, '');
   log.debug(`Checking for cached response for @${username}...`);
   await connection;
   const cachedResponse = await redis.get(username);
