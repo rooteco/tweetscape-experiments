@@ -1,18 +1,13 @@
 import { Link, useLoaderData } from '@remix-run/react';
-import type { LoaderFunction } from '@remix-run/node';
-import invariant from 'tiny-invariant';
 import { useState } from 'react';
 
-export type LoaderData = { id: string; author: string; text: string }[];
+import type { LoaderData } from '~/feed.server';
 
-export const loader: LoaderFunction = async ({ params }) => {
-  invariant(params.username, 'expected params.username');
-  return [];
-};
+export { loader } from '~/feed.server';
 
 export default function Feed() {
   const tweets = useLoaderData<LoaderData>();
-  const [handle, setHandle] = useState('@elonmusk');
+  const [handle, setHandle] = useState('elonmusk');
   return (
     <main>
       <div>
@@ -32,7 +27,7 @@ export default function Feed() {
       <ul>
         {tweets.map((tweet) => (
           <li key={tweet.id}>
-            <b>{tweet.author}: </b>
+            <b>{tweet.author_id}: </b>
             {tweet.text}
           </li>
         ))}
