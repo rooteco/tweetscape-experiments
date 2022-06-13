@@ -91,23 +91,28 @@ if (!redis.isOpen) connection = redis.connect();
 export type LoaderData = (TweetV2 & { author: UserV2; html: string })[];
 
 export const loader: LoaderFunction = async ({ params }) => {
-  log.debug(`Verifying params.username ("${params.username}") exists...`);
-  invariant(params.username, 'expected params.username');
-  const username = params.username.toLowerCase().replace(/^@/, '');
-  log.debug(`Checking for cached response for @${username}...`);
-  await connection;
-  const cachedResponse = await redis.get(username);
-  if (cachedResponse) {
-    log.debug(`Found cached response; sending to client...`);
-    return JSON.parse(cachedResponse) as TweetV2[];
+  try {
+    log.debug(`Verifying params.username ("${params.username}") exists...`);
+    invariant(params.username, 'expected params.username');
+    const username = params.username.toLowerCase().replace(/^@/, '');
+    log.debug(`Checking for cached response for @${username}...`);
+    await connection;
+    const cachedResponse = await redis.get(username);
+    if (cachedResponse) {
+      log.debug(`Found cached response; sending to client...`);
+      return JSON.parse(cachedResponse) as TweetV2[];
+    }
+    log.debug(`Fetching api.v2.userByUsername for @${username}...`);
+    const { data: user } = await api.v2.userByUsername(username);
+    log.debug(`Fetching api.v2.following for ${user.name}...`);
+    const { data: users } = await api.v2.following(user.id);
+    log.debug(`Fetching tweets from ${users.length} followed users...`);
+    const tweets = await getTweetsFromUsernames(users.map((u) => u.username));
+    log.debug(`Fetched ${tweets.length} tweets; caching and sending...`);
+    await redis.setEx(username, MAX_AGE_SECONDS, JSON.stringify(tweets));
+    return tweets;
+  } catch (e) {
+    log.error(`Error fetching tweets: ${JSON.stringify(e, null, 2)}`);
+    throw e;
   }
-  log.debug(`Fetching api.v2.userByUsername for @${username}...`);
-  const { data: user } = await api.v2.userByUsername(username);
-  log.debug(`Fetching api.v2.following for ${user.name}...`);
-  const { data: users } = await api.v2.following(user.id);
-  log.debug(`Fetching tweets from ${users.length} followed users...`);
-  const tweets = await getTweetsFromUsernames(users.map((u) => u.username));
-  log.debug(`Fetched ${tweets.length} tweets; caching and sending...`);
-  await redis.setEx(username, MAX_AGE_SECONDS, JSON.stringify(tweets));
-  return tweets;
 };
