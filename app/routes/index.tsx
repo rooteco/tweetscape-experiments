@@ -1,11 +1,11 @@
 import { Link, useLoaderData } from '@remix-run/react';
 
-import type { LoaderData } from '~/blog.server';
+import type { IndexLoaderData } from '~/blog.server';
 
-export { loader } from '~/blog.server';
+export { indexLoader as loader } from '~/blog.server';
 
 export default function Index() {
-  const posts = useLoaderData<LoaderData>();
+  const posts = useLoaderData<IndexLoaderData>();
   return (
     <main className='flex h-screen items-center justify-center'>
       <section>
@@ -23,9 +23,9 @@ export default function Index() {
           <Link
             key={post.frontmatter.title}
             to={post.path}
-            className='group relative block border-l-2 border-gray-200 pl-6 pb-4'
+            className='group relative block border-l-2 border-dotted border-gray-300 pl-6 pb-4'
           >
-            <div className='absolute top-0 -left-1 -ml-px h-2 w-2 rounded-full bg-gray-200' />
+            <div className='absolute top-0 -left-1 -ml-px h-2 w-2 rounded-full bg-gray-300' />
             <h2 className='text-xl'>
               <span className='font-medium group-hover:underline'>
                 {post.frontmatter.title}
