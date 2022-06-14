@@ -19,10 +19,12 @@ $ vim blog/blog.my-new-blog-post-slug.mdx
 ```
 
 You must prefix blog posts with `blog.<your-slug-here>.mdx`.
-Otherwise, I'll just link to whatever your blog post filename points to; this works just like Remix's file system based routing (e.g. `elonmusk.feed.mdx` 🡢 `/elonmusk/feed` while `blog.feed.mdx` 🡢 `/blog/feed`).
+Otherwise, I'll just link to whatever your blog post filename points to; this works just like [Remix's file system based routing](https://remix.run/docs/en/v1/guides/routing#nested-urls-without-nesting-layouts):
 
-You must also remember to populate the required front matter at the beginning of the `.mdx` file.
-Ex:
+- `elonmusk.feed.mdx` 🡢 `/elonmusk/feed`
+- `blog.feed.mdx` 🡢 `/blog/feed`
+
+You must also remember to populate the required front matter at the beginning of the `.mdx` file:
 
 ```
 ---
@@ -33,7 +35,7 @@ summary: superhuman has a 100ms rule; we have a 50ms rule
 ---
 ```
 
-Once you've created and populated your new blog post, simply `fly deploy` and it should show up in production as soon as the build pipeline finishes.
+Once you've created and populated your new blog post, simply `fly deploy` to push to production.
 
 ## What's in the stack
 
