@@ -21,18 +21,18 @@ test('num truncates large numbers into readable text', () => {
   expect(num(1050)).toBe('1.1K');
   expect(num(1200)).toBe('1.2K');
   expect(num(125300)).toBe('125.3K');
-  expect(num(999999)).toBe('999.9K');
+  expect(num(999900)).toBe('999.9K');
   expect(num(1000000)).toBe('1M');
   expect(num(1010000)).toBe('1M');
   expect(num(1050000)).toBe('1.1M');
 });
 
 test('range initializes empty arrays of specified length', () => {
-  expect(range(0, 3)).toMatchObject([null, null, null]);
+  expect(range(0, 3)).toMatchObject([0, 1, 2]);
 });
 
 function isInt(int: number): boolean {
-  return parseInt(int.toString()) === int;
+  return parseInt(int.toString(), 10) === int;
 }
 
 test('random generates random integers within a range', () => {
