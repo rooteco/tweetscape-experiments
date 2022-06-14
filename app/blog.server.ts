@@ -22,7 +22,10 @@ export const loader: LoaderFunction = async () => {
   );
   return json<LoaderData>(
     posts
-      .map((p, idx) => ({ ...p, path: filenames[idx] }))
+      .map((post, idx) => ({
+        ...post,
+        path: filenames[idx].replace('.mdx', '').replace(/\./g, '/'),
+      }))
       .sort(
         (a, b) =>
           new Date(b.frontmatter.date).valueOf() -
