@@ -8,6 +8,33 @@ Learn more about [Remix Stacks](https://remix.run/stacks).
 npx create-remix --template remix-run/blues-stack
 ```
 
+## Blog
+
+The posts that appear on the home page (`/app/routes/index.tsx`) are loaded at runtime from the `/blog` directory (see `/app/blog.server.ts`).
+To create a new blog post, simply create an `.mdx` file in the `/blog` directory:
+
+```
+$ touch blog/blog.my-new-blog-post-slug.mdx
+$ vim blog/blog.my-new-blog-post-slug.mdx
+```
+
+You must prefix blog posts with `blog.<your-slug-here>.mdx`.
+Otherwise, I'll just link to whatever your blog post filename points to; this works just like Remix's file system based routing (e.g. `elonmusk.feed.mdx` 🡢 `/elonmusk/feed` while `blog.feed.mdx` 🡢 `/blog/feed`).
+
+You must also remember to populate the required front matter at the beginning of the `.mdx` file.
+Ex:
+
+```
+---
+date: April 11, 2022
+author: niicholaschiang
+title: performance upgrades
+summary: superhuman has a 100ms rule; we have a 50ms rule
+---
+```
+
+Once you've created and populated your new blog post, simply `fly deploy` and it should show up in production as soon as the build pipeline finishes.
+
 ## What's in the stack
 
 - [Multi-region Fly app deployment](https://fly.io/docs/reference/scaling/) with [Docker](https://www.docker.com/)
