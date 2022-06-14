@@ -22,11 +22,13 @@ export function num(n: number): string {
 // @see https://www.joshwcomeau.com/snippets/javascript/range/
 export function range(start: number, end?: number, step = 1) {
   const output: number[] = [];
+  /* eslint-disable no-param-reassign */
   if (typeof end === 'undefined') {
     end = start;
     start = 0;
   }
   for (let i = start; i < end; i += step) output.push(i);
+  /* eslint-enable no-param-reassign */
   return output;
 }
 

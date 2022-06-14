@@ -1,4 +1,4 @@
-import { substr, caps, num, range, random } from '~/utils';
+import { caps, num, random, range, substr } from '~/utils';
 
 test('substr truncates text with ellipsis', () => {
   expect(substr('nicholas', 0)).toBe('…');
