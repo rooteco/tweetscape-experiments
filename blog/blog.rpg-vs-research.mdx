@@ -1,0 +1,93 @@
+---
+date: June 22, 2022
+author: nicktorba
+title: exploring user segments
+summary: how do broad user categories compare to each other
+---
+<p align="center">
+<img src="/ss/particle-maze.png" alt="drawing" width="400"/>
+<em><a href="https://twitter.com/matthen2/status/1440443280827699206?s=20&t=65Km-U_SeZP-mLjmNrOgaw">particle maze</a></em>
+</p>
+
+
+Tweetscape began with a [felt sense](https://www.lesswrong.com/posts/eccTPEonRe4BAvNpD/the-felt-sense-what-why-and-how) that there is a lot of potential in improving the UX for twitter power users. We’ve investigated that sense by interviewing a variety of users in an attempt to understand how they use twitter and the problems they face. In this post, I’ll share some of our findings by comparing two high level categories of users and how those categories shape how I think about the twitter user problem space. 
+
+## Exploration and Synthesis
+
+Synthesizing interview data into actionable insights is no easy task. It’s hard to talk in generalities because each user is unique. With that said, all the user personas I describe in this post are fuzzy. Many users don’t fall into a single one, and some don’t fall into any. However, they are still useful tools for understanding the different types of users on twitter. In addition, all personas I discuss fall under a broad umbrella of “power users,” which, in this case, means anyone that is using twitter for more than the default experience of a quick distraction to get some news and memes.
+
+## RPG Players and Research-Driven Users
+Two of the most prominent and interesting types of power users are RPG Players and Research-Driven Users.
+
+RPG players are mainly motivated by engagement. They are less worried about the specifics of the information they encounter, and more interested in finding weird/cool people talking about weird/cool things. 
+
+> "I am looking for people who are going to tweet things I won’t find anywhere else”
+
+RPG players have a broad range of motivation for their engagement. Some are building a genuine audience, some want feedback on their work, some want to make friends, some are trying to avoid intellectual loneliness, and others are… getting into relationships. This breadth makes them a bit hard to categorize, but their desire to create and engage are the common theme among them all. There is even a small faction of RPG players that aren’t yet actively posting on twitter, but are still considered RPG players because they are intensely interested in sharing, but aren’t sure how to start. 
+
+On the other hand, Research-Driven users come to twitter with a clear, external goal. They are not focused on engaging directly on twitter. Instead, they are focused on finding relevant and timely information - using twitter as an informational tool. For the most part, Research-Driven users fall into two subcategories: **Analysts** and **Deep Thinkers**. 
+
+Analysts are typically financial or web3 analysts looking for timely information about specific markets or projects. Meanwhile, deep thinkers tend to be independent researchers or academics who spend a lot of time focused on specific ideas.
+
+## RPG Users vs. Research-Driven Users
+
+This venn diagram is filled with quotes and themes from exploratory interviews. I apologize in advance for the size. You will definitely need to zoom in close to read the points in the image. 
+
+![venn diagram](/ss/rpg-vs-research-vd.png)
+
+Like I mentioned earlier, the main difference between RPG Players and Research-Driven users is that RPG users are engagement driven, while Research-Driven users are information driven. This venn diagram lays out the specifics of how their different goals shape their experience.  
+
+There is a lot we could discuss, but the cards in the middle that point to each side are what I find most interesting. 
+
+#### “Looking for a consistent stream of good ideas”
+When talking to an RPG player, this means “a feed where I want to reply to every single tweet.” RPG players are excited to engage. They use twitter to build relationships. Much of their frustration comes from not being able to find people they want to talk to. 
+
+On the other hand, Research-Driven users want tweets with information that is relevant to their goals. Analysts are excited by the idea of a feed that they can be confident holds the most important news and search that makes it easier to dig deep into a specific topic/event. Meanwhile, deep thinkers want tweets focused on a specific topic, giving them different perspectives on a subject they are focused on, with much less emphasis on the timeliness of the information (in some cases, a specific de-emphasis on recent information). 
+
+#### “How Can I Get to the Root of This?”
+
+RPG players tend to aggregate into groups like “tpot.” When that happens, they slowly develop their own vocabulary, which makes it hard for newcomers to understand what is happening. Words like “vibecamp” become commonplace and leave beginners behind. It takes a lot of work to understand the context of certain groups on twitter. You need to figure out how to follow, see the right tweets, know what to take seriously, and know what to ignore. This is no easy task and many beginners leave twitter before figuring it out.
+
+Research-Driven users are usually looking to understand events happening outside of twitter by finding experts sharing thoughts on twitter. Twitter is great because many smart people post their thoughts, but it is not great at helping users find those relevant thoughts. 
+This makes it hard to get to the root of current events. 
+
+Deep thinkers are often looking for different perspectives from smart, trusted people. However, it can be hard to filter through twitter to find people that are actually sharing thoughts, instead of just acknowledging the existence of an event. 
+
+#### Gripes about twitter functionality
+* “Twitter lists are too much work” 
+* “Twitter search sucks” 
+* “I have a shit ton of likes” 
+
+This is where most users have a lot of common ground. 
+
+Everyone agrees that twitter lists take too much work to maintain except for the [most dedicated users](https://lee-phillips.org/howtotwitter/). Deciding who to follow/unfollow is already enough work. 
+
+Twitter search sucks… you can’t search your likes. The advanced search is hidden. You can’t fuzzy search for things. Saving searches is borderline useless… and the list goes on. 
+
+Likes are weird.  RPG users often use likes as a social signal, which seems to be entirely different from the original purpose. Research-Driven users use likes to boost the signal of tweets they like, and sometimes as bookmarks, but then have too many and they become unwieldy as bookmarks. Likes can also be thought of as a “fuzzy retweet,” because twitter sometimes shows what your follows like, but you can’t completely rely on it. 
+
+## What Now? 
+Both of these user groups make it clear that there is a lot that could be improved in the current twitter UX. The problem for us at Tweetscape is narrowing this information down into a problem/solution to act on. 
+
+Here are some factors we are considering when deciding which user segment and problem to focus on
+* what is possible via the api? 
+    * what limitations are imposed? 
+* can the solution be implemented in a chrome extension, or will it require a separate app/UI? 
+    * how willing are users to switch to and learn a new app/UI? 
+* how many users share the same problem? 
+* are users willing to pay for a solution? 
+* what problems do other tools already solve? 
+* why are these customer segments currently underserved? 
+
+Here are some problems that might be worth solving: 
+* users unable to build context with a group
+* users unable to find different perspectives on the same topic/event at the same/different times
+* users are unable to follow a narrative or dig deep into a topic without first curating a trustworth set of follows on the topic
+* users unable to decide who is worth listening to
+    * how to determine how trustworthy a person's opinion is on a specific topic
+
+These problems have different solutions for different users. A solution for RPG players would be people driven, while a solution for Research-Driven users would be information driven. 
+
+One of the hard questions the Tweetscape team is working through now is which of these users should be our focus. [Last week](https://tweetscape.co/blog/productupdate-06-17-2022), I shared that Ricardo and Julian joined the Tweetscape team. This week, they are hosting a product workshop where the main goal is to converge on a single user segment to focus on. By the end of next week, my hope is to follow up this post with our choice and the thought process behind that choice! If you want to stay up to date on that process, sign up for Tweetscape Product Updates [here](https://www.getrevue.co/profile/tweetscapehq/issues/tweetscape-product-updates-issue-3-1227696)!
+
+There are many ideas and themes to touch on here. If you think I’m missing something important, or got something wrong, I’d love to hear from you ([DM me](https://twitter.com/nicktorba))! 
