@@ -9,3 +9,11 @@ node_modules
 /postgres-data
 
 /app/styles/tailwind.css
+
+/notebooks/reply-views/nicktorba
+/notebooks/reply-views/*.log
+/notebooks/reply-views/.ipynb_checkpoints
+/notebooks/reply-views/data 
+*.pyc
+notebooks/reply-views/basic.conf
+*.env
