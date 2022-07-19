@@ -7,10 +7,10 @@ export { indexLoader as loader } from '~/blog.server';
 export default function Index() {
   const posts = useLoaderData<IndexLoaderData>();
   return (
-    <main className='flex h-screen items-center justify-center'>
+    <main className='flex h-screen flex-col items-center justify-center px-6 lg:flex-row'>
       <section>
         <div>
-          <h1 className='text-4xl font-medium'>
+          <h1 className='text-2xl font-medium sm:text-4xl'>
             tweetscape<i className='ml-1 text-blue-500'>experiments</i>
           </h1>
           <p className='italic text-gray-500'>
@@ -18,7 +18,7 @@ export default function Index() {
           </p>
         </div>
       </section>
-      <nav className='relative ml-16'>
+      <nav className='relative mt-16 lg:ml-16'>
         {posts.map((post) => (
           <Link
             key={post.frontmatter.title}
