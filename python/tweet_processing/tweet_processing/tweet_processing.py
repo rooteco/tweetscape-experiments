@@ -46,7 +46,6 @@ def pull_tweets(client, username, extract_features=True):
                     df_ref_tweets = df_ref_tweets_next
                 else: 
                     df_ref_tweets = pd.concat([df_ref_tweets, df_ref_tweets_next])
-            break
     except HTTPError as err: 
         print(f"400 client error for id {id_}... skipping")
         return username, None, None

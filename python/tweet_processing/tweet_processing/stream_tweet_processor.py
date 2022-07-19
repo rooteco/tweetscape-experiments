@@ -35,27 +35,17 @@ class StreamTweetProcessor:
                     if df_ref_tweets is None:
                         df_ref_tweets = i_df_ref_tweets
                     else: 
-                        df_ref_tweets = pd.concat([df_tweets, i_df_ref_tweets])
+                        df_ref_tweets = pd.concat([df_ref_tweets, i_df_ref_tweets])
         os.makedirs(f"data/{group_name}", exist_ok=True) 
 
         for type_, df_ in [("tweets",df_tweets), ("ref_tweets", df_ref_tweets), ("following",df_following)]:
             df_.to_csv(f"data/{group_name}/{type_}.csv")
         return df_following, df_tweets, df_ref_tweets
     
-    def load_data(self, group_name):
+    def load_stream_seed_data(self, group_name):
         dir_ = f"data/{group_name}"
-        fpaths = os.listdir(dir_)
-
-        following_fpath = [i for i in fpaths if "following.csv" in i]
-        assert len(following_fpath) == 1, "more than 1 for this?"
-        df_following = pd.read_csv(following_fpath[0])
-
-        fpath = [i for i in fpaths if "tweets.csv" in i]
-        assert len(fpath) == 1, "more than 1 for this?"
-        df_tweets = pd.read_csv(fpath[0])
-
-        fpath = [i for i in fpaths if "ref_tweets.csv" in i]
-        assert len(fpath) == 1, "more than 1 for this?"
-        df_ref_tweets = pd.read_csv(fpath[0])
+        df_following = pd.read_csv(f"{dir_}/following.csv")
+        df_tweets = pd.read_csv(f"{dir_}/tweets.csv")
+        df_ref_tweets = pd.read_csv(f"{dir_}/ref_tweets.csv")
 
         return df_following, df_tweets, df_ref_tweets
