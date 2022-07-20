@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 import pandas as pd
 import concurrent.futures
-from requests.exceptions import HTTPError
+
 from sqlalchemy import create_engine #importing sqlalchemy engine to create engine for the database
 import click
 from tqdm import tqdm
