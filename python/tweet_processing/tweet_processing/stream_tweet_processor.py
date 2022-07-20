@@ -6,8 +6,15 @@ from tweet_processing import pull_tweets, get_user_following
 
 
 class StreamTweetProcessor:
-    def __init__(self, twarc_client):
+    def __init__(self, twarc_client, data_dir=None):
         self.twarc_client = twarc_client
+        if data_dir:
+            if not os.path.isdir(data_dir):
+                raise Exception(f"directory '{data_dir}' does not exist... please supply existing directory")
+            else:
+                self.data_dir = data_dir
+        else: 
+            self.data_dir = "data" #assuming data in local directory
 
     def save_stream_seed_data(self, group_name, usernames): 
         df_tweets = None 
@@ -36,14 +43,14 @@ class StreamTweetProcessor:
                         df_ref_tweets = i_df_ref_tweets
                     else: 
                         df_ref_tweets = pd.concat([df_ref_tweets, i_df_ref_tweets])
-        os.makedirs(f"data/{group_name}", exist_ok=True) 
+        os.makedirs(f"{self.data_dir}/{group_name}", exist_ok=True) 
 
         for type_, df_ in [("tweets",df_tweets), ("ref_tweets", df_ref_tweets), ("following",df_following)]:
-            df_.to_csv(f"data/{group_name}/{type_}.csv")
+            df_.to_csv(f"{self.data_dir}/{group_name}/{type_}.csv")
         return df_following, df_tweets, df_ref_tweets
     
     def load_stream_seed_data(self, group_name):
-        dir_ = f"data/{group_name}"
+        dir_ = f"{self.data_dir}/{group_name}"
         df_following = pd.read_csv(f"{dir_}/following.csv")
         df_tweets = pd.read_csv(f"{dir_}/tweets.csv")
         df_ref_tweets = pd.read_csv(f"{dir_}/ref_tweets.csv")
