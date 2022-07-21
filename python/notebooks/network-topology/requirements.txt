@@ -2,3 +2,4 @@ twarc
 pandas 
 numpy
 python-dotenv
+twarc_csv
