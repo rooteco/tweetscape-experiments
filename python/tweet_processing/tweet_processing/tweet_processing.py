@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import json
 import concurrent.futures
+from datetime import datetime, timedelta, timezone
 from tqdm import tqdm
 from requests.exceptions import HTTPError
 import click
@@ -30,7 +31,7 @@ def pull_tweets(client, username, extract_features=True):
     else: 
         id_ = id_res["data"][0]["id"]
     # id_ =  [i for i in client.user_lookup(users=[username], usernames=True)][0]["data"][0]["id"]
-    timeline_gen = client.timeline(id_, max_results=5)
+    timeline_gen = client.timeline(id_, max_results=100)
     try: 
         for res in timeline_gen:
             df_tweets_next = converter.process([res])
@@ -61,6 +62,15 @@ def pull_tweets(client, username, extract_features=True):
     df_ref_tweets["referencer.username"] = username # make it possible for me to get the id of the account who referenced this tweet
     return username, df_tweets, df_ref_tweets 
 
+def get_time_interval(hours=24):
+    """
+    ## Get dates for a 24 hour window to pass to twarc2 timeline command
+
+    Return EndTime, StartTime, from current time
+    """
+    now = datetime.now(timezone.utc)
+    (now - timedelta(hours=24)).isoformat("T")[:-3] + "Z"
+    return now.isoformat("T")[:-13]+"Z",  (now - timedelta(hours=hours)).isoformat("T")[:-13] + "Z"
 
 def get_user_following(client, username):
     """
