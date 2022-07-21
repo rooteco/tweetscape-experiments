@@ -1,0 +1,4 @@
+twarc
+pandas 
+numpy
+python-dotenv
