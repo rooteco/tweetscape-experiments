@@ -1,0 +1,81 @@
+---
+date: July 22, 2022
+author: nicktorba
+title: product update 07-22-2022
+summary: excited early adopters, andre, and tech validation!
+---
+
+> ![unsplash-cyberpunk](/ss/jr-korpa-9XngoIpxcEo-unsplash.jpg)
+
+If you want to get emails when we post new product updates, you can **sign up [here](https://twitter.com/i/newsletters/subscribe/TweetscapeHQ)**! 
+
+# Tweetscape Product Update, 07/22/2022
+Welcome back to Tweetscape Product Updates! 
+
+## Early Adopters
+
+We got an exciting signal this week: two different people offered to be **paying** early adopters. 
+
+Our team isn’t quite ready to accept payment yet, but it is great to see resonance among people we think will be happy customers soon. 
+
+Over the next couple of weeks, we will discuss when that “ready point” is (I will personally defer to much sooner rather than later, but we will decide as a team). We are also going to think of some ways our earliest paying customers can get involved in our development process. 
+
+## Andre!
+
+Luckily for us, Andre, previously seen working on Roote’s [Civic Abundance](https://www.roote.co/civic-abundance) project, has some extra time to help us out with technical validation. 
+
+**He just finished working on [Abstract Poetry](https://www.notion.so/Abstract-Poetry-v1-3091712630864f058f578fecc235479e), an awesome scientific paper search engine project that you should check out.** And if you are excited by that description, you should [dm him](https://twitter.com/andrepology) to get early access to the first prototype! 
+
+The Tweetscape team is excited to have him bring over the NLP knowledge he used to build Abstract Poetry and see how the same concepts could apply to building Tweetscape streams! 
+
+## Technical Validation - Streams Use Case
+
+[Last week](https://tweetscape.co/blog/productupdate-07-15-2022), I shared our plans to start technical validation.
+
+We started with the following use case: If a user seeds a stream with three accounts based around a specific topic/interest (e.g. longevity, robotics, economics, etc.) can we create a feed focused on that interest (no cat pictures)?
+
+There is a lot that goes into that use case, so we broke it into two phases
+
+1. Generative
+2. Filtering
+
+The generative phase is where we find ways to help them grow the number of sources for the stream, while filtering where we cut out tweets from those sources that are not relevant to the topic of interest.
+
+Here’s a rough image (sorry that you have to zoom to read) showing the different phases.
+
+> ![unsplash-cyberpunk](/ss/generative-and-filtering.png)
+
+This week, we started our exploration **focused on the generative phase,** starting with this question: *what are some simple ways to recommend more accounts based on those seed accounts?*
+
+We started this investigation by looking at the overlapping networks of the seed accounts. The networks can overlap based on follows as well as interactions. 
+
+The idea is that if *multiple* *seed accounts* follow or interact with the same accounts, that is a high signal that that other person could fit in the stream as well. 
+
+Of course, there are many cases where this will break, which I hope to show next week when we deploy small apps that allow you to investigate these networks on your own. 
+
+## Reply Views Feedback and Updates
+
+I’ve been slacking on some requested updates to the [reply views app](https://tweetscape-experiments-reply-views-streamlit.fly.dev/) (aka, [find your lowbies](https://twitter.com/_jersey_john/status/1538603004802244610?s=20&t=arcbdJZoVzBel83Yn295NQ)) I shared in the [Tweetscape Product Update, 07/08/2022](https://tweetscape.co/blog/productupdate-07-08-2022). 
+
+Here are the suggestions from an excited user: 
+
+- make date ranges toggle-able
+- both mean and median liked tweets to followers ratio
+- both mean and median liked tweets to followers to replies bubble graph
+- be able to do everything on my followers as well as my follows
+
+Most are pretty straightforward, I just need to dedicate the time. 
+
+This work fits well with the follower/interaction networks I mentioned above. We want to get our work in front of people as quickly as possible. Luckily, tools like [streamlit](https://www.notion.so/This-work-fits-well-with-the-follower-interaction-networks-I-mentioned-above-We-want-to-get-our-wor-10f0ef9feaad435b9298b4dccb7eff59) make it easy to quickly deploy experimental code. This process will get even easier after I work on [this ticket](https://github.com/rooteco/tweetscape-experiments/issues/7). 
+
+If you have anymore feedback on these past small experiments, or ideas for future ones, I’d love to hear them! 
+
+## Hosted Notebooks
+
+On top of deploying streamlit apps, our team has started to play around with the idea of sharing hosted jupyter notebooks where anyone can experiment with our code. If this idea excites you, please [let me know](https://twitter.com/nicktorba)! If enough folks like this idea, I can make it a much higher priority. 
+
+# Thanks
+
+That’s it for this week. Thanks for reading! As always, you can [dm me anytime](https://twitter.com/nicktorba) - about anything. Literally anything. Doesn’t have to be Tweetscape related. Just throwing that out there. 
+
+See you next week!
