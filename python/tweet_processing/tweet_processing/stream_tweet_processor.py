@@ -1,20 +1,16 @@
 import os
 import concurrent.futures
+from io import BytesIO
 from tqdm import tqdm
 import pandas as pd
 from tweet_processing import pull_tweets, get_user_following
 
 
 class StreamTweetProcessor:
-    def __init__(self, twarc_client, data_dir=None):
+    def __init__(self, twarc_client, minio_client, bucket):
         self.twarc_client = twarc_client
-        if data_dir:
-            if not os.path.isdir(data_dir):
-                raise Exception(f"directory '{data_dir}' does not exist... please supply existing directory")
-            else:
-                self.data_dir = data_dir
-        else: 
-            self.data_dir = "data" #assuming data in local directory
+        self.minio_client = minio_client
+        self.bucket = bucket
 
     def save_stream_seed_data(self, group_name, usernames): 
         df_tweets = None 
@@ -46,13 +42,38 @@ class StreamTweetProcessor:
         os.makedirs(f"{self.data_dir}/{group_name}", exist_ok=True) 
 
         for type_, df_ in [("tweets",df_tweets), ("ref_tweets", df_ref_tweets), ("following",df_following)]:
-            df_.to_csv(f"{self.data_dir}/{group_name}/{type_}.csv")
+            self.remote_write_seed_df(f"{group_name}/{type_}.csv", df_)
         return df_following, df_tweets, df_ref_tweets
-    
-    def load_stream_seed_data(self, group_name):
-        dir_ = f"{self.data_dir}/{group_name}"
-        df_following = pd.read_csv(f"{dir_}/following.csv")
-        df_tweets = pd.read_csv(f"{dir_}/tweets.csv")
-        df_ref_tweets = pd.read_csv(f"{dir_}/ref_tweets.csv")
 
+    def remote_write_seed_df(self, object_fpath, df):
+        """
+        bucket: minio bucket to write to
+        object_fpath: fpath of object to write to
+        df: the dataframe to save
+        """
+        csv_bytes = df.to_csv(index=False).encode('utf-8')
+        csv_buffer = BytesIO(csv_bytes)
+        write_result = self.minio_client.put_object(
+            self.bucket, #bucket-name,
+            object_fpath,
+            # f'{group_name}/following.csv',#bucket-path
+            data=csv_buffer,
+            length=len(csv_bytes),
+            content_type='application/csv'
+        )
+        return write_result
+
+    def remote_read_seed_data(self, group_name):
+        dfs = []
+        for type_ in ["following.csv", "tweets.csv", "ref_tweets.csv"]:
+            read_res = self.minio_client.get_object(
+                self.bucket, 
+                f"{group_name}/{type_}"
+            )
+            df = pd.read_csv(BytesIO(read_res.data))
+            dfs.append(df)
+        df_following, df_tweets, df_ref_tweets = dfs
         return df_following, df_tweets, df_ref_tweets
+
+
+    
