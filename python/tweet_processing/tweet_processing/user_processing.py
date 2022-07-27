@@ -20,6 +20,8 @@ def lookup_users_by_username(client, usernames):
     user_gen = client.user_lookup(users=usernames, usernames=True)
     df_users = None
     for res in user_gen:
+        if "errors" in res:
+            return res
         df_next = converter.process(res["data"])
         if df_users is None:
             df_users = df_next

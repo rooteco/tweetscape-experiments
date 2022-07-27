@@ -1,46 +1,15 @@
 from dis import dis
 import os
 from dotenv import load_dotenv
+import requests
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 from minio import Minio
 from twarc import Twarc2, expansions
 from tweet_processing import StreamTweetProcessor, get_time_interval, lookup_users_by_username
 
 load_dotenv()
-
-def local_css(file_name):
-    with open(file_name) as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-
-def remote_css(url):
-    st.markdown(f'<link href="{url}" rel="stylesheet">', unsafe_allow_html=True)    
-
-def icon(icon_name):
-    st.markdown(f'<i class="material-icons">{icon_name}</i>', unsafe_allow_html=True)
-
-import requests
-# from IPython.display import display, Markdown
-
-class Tweet(object):
-    """
-    This class is used to display tweets in feeds in the notebook
-    """
-    def __init__(self, s, embed_str=False):
-        if not embed_str:
-            # Use Twitter's oEmbed API
-            # https://dev.twitter.com/web/embedded-tweets
-            api = 'https://publish.twitter.com/oembed?url={}'.format(s)
-            response = requests.get(api)
-            self.text = response.json()["html"]
-        else:
-            self.text = s
-
-    def _repr_html_(self):
-        return self.text
-
-import streamlit.components.v1 as components
-
 
 class TweetHtml(object):
     def __init__(self, s, embed_str=False):
@@ -53,27 +22,11 @@ class TweetHtml(object):
         else:
             self.text = s
 
-    def _repr_html_(self):
-        return self.text
-
     def component(self):
-        return components.html(self.text, height=600)
-
-
-# t = Tweet("https://twitter.com/OReillyMedia/status/901048172738482176").component()
-
-    
-def display_feed(tweet_links): 
-    feed = ""
-    tweets = []
-    for link in tweet_links:
-        feed += Tweet(link)._repr_html_()
-        feed += "-----------------"
-        # tweets.append(Tweet(link)._repr_html_())
-    return feed
+        return components.html(self.text, scrolling=True, height=250)
 
 def explore_feed(df_following, df_tweets, df_ref_tweets):
-    st.header("Exploring Feed of Tweets from Seed Accounts")
+    st.header("Exploring Tweets from Seed Accounts")
     num_days_for_feed = st.number_input(
         "Number of days to include for feed",
         min_value=1, 
@@ -82,32 +35,34 @@ def explore_feed(df_following, df_tweets, df_ref_tweets):
     )
     end_time, start_time = get_time_interval(hours=24*num_days_for_feed)
     tweets_range = df_tweets[df_tweets["created_at"] > start_time]
-    
+    tweets_range = tweets_range[~tweets_range["tweet_type"].str.contains("rt")]
     tweet_types = list(df_tweets["tweet_type"].unique())
     selected_tweet_types = st.multiselect(
         'which types of tweets to include in feed...',
         tweet_types,
-        default="standalone"
+        default=tweet_types
     )
     tweets_choose_type = tweets_range[tweets_range["tweet_type"].isin(selected_tweet_types)]  
-    st.text(f"{tweets_choose_type.shape[0]} tweets in range and type from seed accounts")
-    # tweets_choose_type = tweets_range[(tweets_range["tweet_type"] == "standalone") | (tweets_range["tweet_type"] == "standalone,mention")]
+    st.text(f"{tweets_choose_type.shape[0]} tweets in range and type from seed accounts. Here is the breakdown of which accounts the tweets are from:")
     st.dataframe(tweets_choose_type["author.username"].value_counts())
+    def filter_by_quantile(group, metric, quantile):
+        thresh = group[f"public_metrics.{metric}"].quantile(quantile)
+        return group[group[f"public_metrics.{metric}"] > thresh]
 
-    st.write(display_feed(tweets_choose_type.tweet_link.tolist()), unsafe_allow_html=True)
-    tweet = TweetHtml(tweets_choose_type.tweet_link.tolist()[0])
-    print(tweet.component())
-    st.write(tweet.component())
-    # for link in tweets_choose_type.tweet_link.tolist():
-    #     st.write(TweetHtml(link).component())
-    # for i in display_feed(tweets_choose_type.tweet_link.tolist()):
-    #     st.write(i)
+    st.header("Tweet by metric quartile, relative to user")
+    metric = st.selectbox("metric to sort by", ["like_count", "retweet_count", "quote_count", "reply_count"])
+    quantile = st.slider("quantile", min_value=0, max_value=100, step=5, value=90)
+    quantile /= 100
+    tweets_quantile = tweets_choose_type.groupby(["author.username"]).apply(lambda x: filter_by_quantile(x, metric, quantile)).drop("author.username", axis=1).reset_index()
+    st.dataframe(tweets_quantile)
+    st.write(f"showing {tweets_quantile.shape[0]}/{tweets_range.shape[0]} tweets above the {quantile*100} quantile for {metric} in the last {num_days_for_feed} days")
+    st.dataframe(tweets_quantile["author.username"].value_counts())
+    for index, row in tweets_quantile.sort_values(["author.username", f"public_metrics.{metric}"], ascending=False).iterrows():
+        st.write("------------")
+        st.write(f"tweet (type={row.tweet_type}) by {row['author.username']} with {metric}={row[f'public_metrics.{metric}']}")
+        TweetHtml(row.tweet_link).component() #just this line shows the component, you don't need to st.write it        
 
-def main(group_name="CA-Abundance-Economy"):
-    # group_name = "longevity-pranab"
-
-    df_following, df_tweets, df_ref_tweets = tp.remote_read_seed_data(group_name) 
-
+def recommend_by_following(df_following):
     ## Get a set of usernames that each seed account follows
     users_following = {}
     for user in df_following["referencer.username"].unique().tolist():
@@ -115,7 +70,6 @@ def main(group_name="CA-Abundance-Economy"):
         
     ## index will be useful to access metadata (followers_count) about these accounts
     df_following.set_index("username", inplace=True)
-
 
     ### Create a dataframe that will show the following_overlap for each of the accounts followed by at least 1 of the seed accounts. 
     ### We are most interested in the intersection among the following of those accounts
@@ -135,7 +89,7 @@ def main(group_name="CA-Abundance-Economy"):
         if isinstance(num_followers_of_followed, pd.Series):
             num_followers_of_followed = num_followers_of_followed.iloc[0]
             profile_image_url = profile_image_url.iloc[0]
-        df_data.append([f"<img src='{profile_image_url}'/>", followed_user, stream_users, len(stream_users), num_followers_of_followed, f"https://twitter.com/{followed_user}"])
+        df_data.append([profile_image_url, followed_user, stream_users, len(stream_users), num_followers_of_followed, f"https://twitter.com/{followed_user}"])
         
     overlap_df = pd.DataFrame(df_data, columns=["profile_image_url", "followed.username", "stream_users", "num_stream_users", "num_followers_of_followed", "profile_link"])
     overlap_df["num_stream_users"].value_counts()
@@ -148,15 +102,14 @@ def main(group_name="CA-Abundance-Economy"):
         max_value=df_following["referencer.username"].nunique()+1, 
         value=df_following["referencer.username"].nunique()
     )
-
     present_df = overlap_df[overlap_df["num_stream_users"]>=minimum_seed_accounts].sort_values("num_followers_of_followed")
-
+    max_show = st.slider("num recommendations to show", min_value=1, max_value=present_df.shape[0], value=5)
     st.header(f"Accounts followed by at least {minimum_seed_accounts} seed users")
-    st.write(f"showing {present_df.shape[0]} recommended accounts, sorted by follower count")
-    st.dataframe(present_df)
-    # st.write(present_df.to_html(escape=False, index=False), unsafe_allow_html=True)
-
-
+    st.write(f"showing {max_show} recommended accounts, sorted by follower count")
+    for index, row in present_df.iloc[:max_show].iterrows():
+        st.markdown(f"![profile_image]({row.profile_image_url}), {row['followed.username']}, num_followers={row.num_followers_of_followed}, [profile_link]({row.profile_link})", unsafe_allow_html=True)
+    
+def recommend_by_interactions(df_following, df_tweets, df_ref_tweets):
     st.header("Which Accounts have multiple Seed Accounts Interacted with in the last X weeks?")
     num_weeks = st.number_input(
         "Number of weeks to include",
@@ -169,11 +122,8 @@ def main(group_name="CA-Abundance-Economy"):
     df_x_tweets = df_tweets[df_tweets["created_at"]>start_time]
     df_x_ref_tweets = df_ref_tweets[df_ref_tweets["created_at"]>start_time]
 
-    print(df_tweets.shape, df_x_tweets.shape)
-    print(df_ref_tweets.shape, df_x_ref_tweets.shape)
-
-    reply_tweets = df_x_tweets[df_x_tweets["referenced_tweets.replied_to.id"].notna()]
-    no_self_replies = reply_tweets[~reply_tweets["tweet_type"].str.contains("self-reply")]
+    # reply_tweets = df_x_tweets[df_x_tweets["referenced_tweets.replied_to.id"].notna()]
+    # no_self_replies = reply_tweets[~reply_tweets["tweet_type"].str.contains("self-reply")]
 
     interaction_columns = ["referenced_tweets.replied_to.id", "referenced_tweets.quoted.id", "referenced_tweets.retweeted.id"]
 
@@ -183,7 +133,6 @@ def main(group_name="CA-Abundance-Economy"):
             ref_ = df_ref_tweets[df_ref_tweets["id"] == referenced_id_]
             if ref_.shape[0] > 0:
                 # interaction_overlap.setdefault(ref_.iloc[0]["author.username"], set()).add(author_username)
-                
                 interaction_overlap.setdefault(ref_.iloc[0]["author.username"], {"stream_users":set(), "interaction_ids": []}) #.add(author_username)
                 interaction_overlap[ref_.iloc[0]["author.username"]]["stream_users"].add(author_username)
                 interaction_overlap[ref_.iloc[0]["author.username"]]["interaction_ids"].append(tweet_id)
@@ -197,7 +146,7 @@ def main(group_name="CA-Abundance-Economy"):
                 interaction_data["stream_users"],
                 len(interaction_data["stream_users"]),
                 interaction_data["interaction_ids"], 
-                f"https://twitter.com/{interacted_user}"
+                f"https://twitter.com/{interacted_user}",
             ]
         )
     overlap_df = pd.DataFrame(
@@ -207,7 +156,7 @@ def main(group_name="CA-Abundance-Economy"):
             "stream_users", 
             "num_stream_users", 
             "interaction_ids",
-            "profile_link"
+            "profile_link", 
         ]
     )
     minimum_seed_accounts_interactions = st.number_input(
@@ -225,9 +174,19 @@ def main(group_name="CA-Abundance-Economy"):
         user_df = lookup_users_by_username(twarc_client, usernames).set_index("username")
     
     filtered_overlap_df["num_followers_of_interacted"] = [user_df.loc[username]["public_metrics.followers_count"] for username in filtered_overlap_df["interacted.username"].tolist()]
-    st.write(f"showing {filtered_overlap_df.shape[0]} accounts that were referenced by at least {minimum_seed_accounts_interactions} seed accounts")
-    st.dataframe(filtered_overlap_df.sort_values("num_followers_of_interacted"))
+    filtered_overlap_df["profile_image_url_of_interacted"] = [user_df.loc[username]["profile_image_url"] for username in filtered_overlap_df["interacted.username"].tolist()]
 
+    cur_val = 5 if filtered_overlap_df.shape[0] > 5 else filtered_overlap_df.shape[0]
+    st.write(f"Showing accounts that at least {minimum_seed_accounts_interactions} seed accounts have interacted with in the last {num_weeks} weeks")
+    max_show = st.slider("num recommendations to show, based on interactions", min_value=1, max_value=filtered_overlap_df.shape[0], value=cur_val)
+    st.write(f"showing {max_show} recommended accounts based on interaction, sorted by follower count")
+    for index, row in filtered_overlap_df.iloc[:max_show].iterrows():
+        st.markdown(f"![profile_image]({row.profile_image_url_of_interacted}), {row['interacted.username']}, num_followers={row.num_followers_of_interacted}, [profile_link]({row.profile_link})", unsafe_allow_html=True)
+
+def main(group_name="CA-Abundance-Economy"):
+    df_following, df_tweets, df_ref_tweets = tp.remote_read_seed_data(group_name) 
+    recommend_by_following(df_following)
+    recommend_by_interactions(df_following, df_tweets, df_ref_tweets)
     explore_feed(df_following, df_tweets, df_ref_tweets)
 
 twarc_client = Twarc2(
