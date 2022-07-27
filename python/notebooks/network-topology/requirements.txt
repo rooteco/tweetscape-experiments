@@ -2,3 +2,5 @@ twarc
 pandas 
 numpy
 python-dotenv
+minio
+stqdm

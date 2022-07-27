@@ -2,6 +2,7 @@ import os
 import concurrent.futures
 from io import BytesIO
 from tqdm import tqdm
+from stqdm import stqdm
 import pandas as pd
 from tweet_processing import pull_tweets, get_user_following
 
@@ -12,7 +13,7 @@ class StreamTweetProcessor:
         self.minio_client = minio_client
         self.bucket = bucket
 
-    def save_stream_seed_data(self, group_name, usernames): 
+    def save_stream_seed_data(self, group_name, usernames, streamlit_progress_bar=False): 
         df_tweets = None 
         df_ref_tweets = None
         df_following = None
@@ -26,7 +27,8 @@ class StreamTweetProcessor:
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
             # Start the load operations and mark each future with its URL
             futures = {executor.submit(pull_tweets, self.twarc_client, username): username for username in usernames}
-            for future in tqdm(concurrent.futures.as_completed(futures), total=len(usernames)):
+            progress_bar = stqdm if streamlit_progress_bar else tqdm
+            for future in progress_bar(concurrent.futures.as_completed(futures), total=len(usernames)):
                 # _ = future_to_url[future]
                 i_username, i_df_tweets, i_df_ref_tweets = future.result()
                 if isinstance(i_df_tweets, pd.DataFrame):
@@ -39,7 +41,6 @@ class StreamTweetProcessor:
                         df_ref_tweets = i_df_ref_tweets
                     else: 
                         df_ref_tweets = pd.concat([df_ref_tweets, i_df_ref_tweets])
-        os.makedirs(f"{self.data_dir}/{group_name}", exist_ok=True) 
 
         for type_, df_ in [("tweets",df_tweets), ("ref_tweets", df_ref_tweets), ("following",df_following)]:
             self.remote_write_seed_df(f"{group_name}/{type_}.csv", df_)

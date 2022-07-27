@@ -8,6 +8,7 @@ import streamlit.components.v1 as components
 from minio import Minio
 from twarc import Twarc2, expansions
 from tweet_processing import StreamTweetProcessor, get_time_interval, lookup_users_by_username
+# import tweet_processing.streamlit_redirect as rd
 
 load_dotenv()
 
@@ -236,4 +237,12 @@ else:
     selected = st.text_input("search for users", "", on_change=build_group_list, key="user_text_key")
     button_clicked = st.button("Create New Group with currently selected users")
     st.write(f"your users to create group with: {st.session_state.new_user_group}")
+
+    if button_clicked:
+        group = list(st.session_state.new_user_group)
+        group.sort()
+        group_name = ",".join(group)
+        print(f"creating group {group_name}")
+        df_following, df_tweets, df_ref_tweets = tp.save_stream_seed_data(group_name, group,streamlit_progress_bar=True)
+        st.write("refresh to access your new group in the dropdown")
 

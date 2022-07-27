@@ -18,7 +18,7 @@ load_dotenv()
 
 converter = DataFrameConverter("tweets", allow_duplicates=True)
 
-def pull_tweets(client, username, extract_features=True):
+def pull_tweets(client, username, extract_features=True, max_tweets=1000):
     df_tweets = None
     df_ref_tweets = None
 
@@ -33,6 +33,9 @@ def pull_tweets(client, username, extract_features=True):
     # id_ =  [i for i in client.user_lookup(users=[username], usernames=True)][0]["data"][0]["id"]
     timeline_gen = client.timeline(id_, max_results=100)
     try: 
+        max_pages = max_tweets // 100
+        cur_page = 0
+
         for res in timeline_gen:
             df_tweets_next = converter.process([res])
             
@@ -46,7 +49,10 @@ def pull_tweets(client, username, extract_features=True):
                 if df_ref_tweets is None:
                     df_ref_tweets = df_ref_tweets_next
                 else: 
-                    df_ref_tweets = pd.concat([df_ref_tweets, df_ref_tweets_next])
+                    df_ref_tweets = pd.concat([df_ref_tweets, df_ref_tweets_next]) 
+            cur_page += 1
+            if cur_page >= max_pages:
+                break
     except HTTPError as err: 
         print(f"400 client error for id {id_}... skipping")
         return username, None, None
