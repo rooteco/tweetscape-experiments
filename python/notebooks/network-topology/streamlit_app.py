@@ -242,7 +242,7 @@ else:
         group = list(st.session_state.new_user_group)
         group.sort()
         group_name = ",".join(group)
-        print(f"creating group {group_name}")
+        st.write(f"creating group {group_name}")
         df_following, df_tweets, df_ref_tweets = tp.save_stream_seed_data(group_name, group,streamlit_progress_bar=True)
         st.write("refresh to access your new group in the dropdown")
 

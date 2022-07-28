@@ -17,16 +17,26 @@ converter = DataFrameConverter("users", allow_duplicates=True)
 
 
 def lookup_users_by_username(client, usernames): 
-    user_gen = client.user_lookup(users=usernames, usernames=True)
-    df_users = None
-    for res in user_gen:
-        if "errors" in res:
-            return res
-        df_next = converter.process(res["data"])
-        if df_users is None:
-            df_users = df_next
+    def hit_twitter():
+        user_gen = client.user_lookup(users=usernames, usernames=True)
+        df_users = None
+        for res in user_gen:
+            if "errors" in res:
+                return res
+            df_next = converter.process(res["data"])
+            if df_users is None:
+                df_users = df_next
+            else: 
+                df_users = pd.concat([df_users, df_next])
+        return df_users
+    retries = 5
+    while retries: 
+        try: 
+            df_users = hit_twitter()
+        except HTTPError as err: 
+            retries -= 1
         else: 
-            df_tweets = pd.concat([df_tweets, df_next])
+            break
     return df_users
                 
 
