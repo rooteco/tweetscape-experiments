@@ -24,10 +24,17 @@ class TweetHtml(object):
             self.text = s
 
     def component(self):
-        return components.html(self.text, scrolling=True, height=250)
+        return components.html(self.text, scrolling=True, height=350)
 
 def explore_feed(df_following, df_tweets, df_ref_tweets):
-    st.header("Exploring Tweets from Seed Accounts")
+    st.header("Filter Tweets from Seed Accounts")
+    st.markdown(
+        """
+        This section is used to show tweets from the seed accounts in your group
+        * `number of days to include for feed`: number of days (from right now) to include in available tweets
+        * `which types of tweets to include`: categories in this list will be included. click the x on any of them to remove them
+        """
+    )
     num_days_for_feed = st.number_input(
         "Number of days to include for feed",
         min_value=1, 
@@ -39,25 +46,50 @@ def explore_feed(df_following, df_tweets, df_ref_tweets):
     tweets_range = tweets_range[~tweets_range["tweet_type"].str.contains("rt")]
     tweet_types = list(df_tweets["tweet_type"].unique())
     selected_tweet_types = st.multiselect(
-        'which types of tweets to include in feed...',
+        'which types of tweets to include',
         tweet_types,
         default=tweet_types
     )
     tweets_choose_type = tweets_range[tweets_range["tweet_type"].isin(selected_tweet_types)]  
-    st.text(f"{tweets_choose_type.shape[0]} tweets in range and type from seed accounts. Here is the breakdown of which accounts the tweets are from:")
+
+    st.markdown(
+        f"""
+        There are {tweets_choose_type.shape[0]} total tweets that fit these filters. 
+        Here is a breakdown of how many of those tweets come from each users: 
+        """
+    )
     st.dataframe(tweets_choose_type["author.username"].value_counts())
+    selected_seed_accounts = st.multiselect(
+        'Select seed accounts to fetch tweets for',
+        tweets_choose_type["author.username"].unique().tolist(),
+        default=tweets_choose_type["author.username"].unique().tolist()
+    )
+
+    tweets_choose_type = tweets_choose_type[tweets_choose_type["author.username"].isin(selected_seed_accounts)]
+
     def filter_by_quantile(group, metric, quantile):
         thresh = group[f"public_metrics.{metric}"].quantile(quantile)
         return group[group[f"public_metrics.{metric}"] > thresh]
 
-    st.header("Tweet by metric quartile, relative to user")
+    st.subheader("Sort Tweets")
+    st.markdown(
+        """
+        * `metric to sort by`: select which metric to use to sort tweets (try differet ones!)
+        * `quantile`: only include the top X quantile (relative to each user) for these tweets! 
+        """
+    )
     metric = st.selectbox("metric to sort by", ["like_count", "retweet_count", "quote_count", "reply_count"])
-    quantile = st.slider("quantile", min_value=0, max_value=100, step=5, value=90)
+    quantile = st.slider("quantile", min_value=0, max_value=100, step=5, value=75)
     quantile /= 100
     tweets_quantile = tweets_choose_type.groupby(["author.username"]).apply(lambda x: filter_by_quantile(x, metric, quantile)).drop("author.username", axis=1).reset_index()
-    st.dataframe(tweets_quantile)
     st.write(f"showing {tweets_quantile.shape[0]}/{tweets_range.shape[0]} tweets above the {quantile*100} quantile for {metric} in the last {num_days_for_feed} days")
     st.dataframe(tweets_quantile["author.username"].value_counts())
+    st.subheader("Your janky, custom feed!")
+    st.markdown(
+        """
+        **tweets are sorted by username, then metric**. make sure to play with the filters (like lowering the quantile), if you want more tweets!
+        """
+    )
     for index, row in tweets_quantile.sort_values(["author.username", f"public_metrics.{metric}"], ascending=False).iterrows():
         st.write("------------")
         st.write(f"tweet (type={row.tweet_type}) by {row['author.username']} with {metric}={row[f'public_metrics.{metric}']}")
@@ -65,6 +97,20 @@ def explore_feed(df_following, df_tweets, df_ref_tweets):
 
 def recommend_by_following(df_following):
     ## Get a set of usernames that each seed account follows
+
+    st.subheader("Account Recommendation by follows")
+    st.markdown(
+        """
+        This below, we will show accounts that are followed by some number of seed accounts. **You control the minimum number of accounts.**
+
+        For example, most groups have three accounts. If you set the input field `minimum number of seed accounts followed by` to 3, you will only 
+        see recommended accounts who are followed by __all three seed accounts__. You can drop the number to 2 to see many more recommendations. 
+
+        
+        Under that, you can control how many recomendations to show (default is 5). They are **sorted by follower_count**, which means that the top recommendations are the accounts with the least amount of followers. 
+        
+        """
+    )
     users_following = {}
     for user in df_following["referencer.username"].unique().tolist():
         users_following[user] = set(df_following[df_following["referencer.username"] == user]["username"].tolist())
@@ -95,7 +141,6 @@ def recommend_by_following(df_following):
     overlap_df = pd.DataFrame(df_data, columns=["profile_image_url", "followed.username", "stream_users", "num_stream_users", "num_followers_of_followed", "profile_link"])
     overlap_df["num_stream_users"].value_counts()
 
-
     NUM_SEED_ACCOUNTS = 3
     minimum_seed_accounts = st.number_input(
         "minimum number seed accounts followed by",
@@ -105,13 +150,25 @@ def recommend_by_following(df_following):
     )
     present_df = overlap_df[overlap_df["num_stream_users"]>=minimum_seed_accounts].sort_values("num_followers_of_followed")
     max_show = st.slider("num recommendations to show", min_value=1, max_value=present_df.shape[0], value=5)
-    st.header(f"Accounts followed by at least {minimum_seed_accounts} seed users")
     st.write(f"showing {max_show} recommended accounts, sorted by follower count")
     for index, row in present_df.iloc[:max_show].iterrows():
         st.markdown(f"![profile_image]({row.profile_image_url}), {row['followed.username']}, num_followers={row.num_followers_of_followed}, [profile_link]({row.profile_link})", unsafe_allow_html=True)
     
 def recommend_by_interactions(df_following, df_tweets, df_ref_tweets):
     st.header("Which Accounts have multiple Seed Accounts Interacted with in the last X weeks?")
+    st.subheader("Account Recommendation by Interactions")
+    st.markdown(
+        """
+        These recommendations are similar to the ones above, except it is based on interactions instead of follows. 
+        Below, we will show accounts that muliple seed accounts have **interacted** with.
+
+        * interactions include: replies, quote tweets, and retweets (not likes!)
+
+        Fields:
+        * `Number of weeks to include`: only include interactions up to X weeks ago (increase this range for more recommedations)
+        * `minimum number of seed accounts referenced by`: how many seed accounts must have interacted with an account for them to be recommended? 
+        """
+    )
     num_weeks = st.number_input(
         "Number of weeks to include",
         min_value=1, 
@@ -186,6 +243,8 @@ def recommend_by_interactions(df_following, df_tweets, df_ref_tweets):
 
 def main(group_name="CA-Abundance-Economy"):
     df_following, df_tweets, df_ref_tweets = tp.remote_read_seed_data(group_name) 
+    st.markdown(f"**You selected group '{group_name}'!**")
+    st.text("This group will first show accounts deemed similar, then will allow you to sort tweets for these accounts")
     recommend_by_following(df_following)
     recommend_by_interactions(df_following, df_tweets, df_ref_tweets)
     explore_feed(df_following, df_tweets, df_ref_tweets)
@@ -199,6 +258,7 @@ twarc_client = Twarc2(
 
 minio_client = Minio(
     "experiment-data-minio.internal:9000",
+    # "localhost:9000",
     access_key=os.environ["MINIO_ROOT_USER"],
     secret_key=os.environ["MINIO_ROOT_PASSWORD"],
     secure=False
@@ -207,11 +267,25 @@ minio_client = Minio(
 tp = StreamTweetProcessor(twarc_client=twarc_client, minio_client=minio_client, bucket="stream-seeding")
 
 
-st.header("Select Previously Available Group")
+st.header("Tweetscape: Naive Streams")
+st.text("This is the first implementation of ideas behind tweetscape streams.")
+
+st.subheader("How does this work?")
+st.markdown(
+    """
+    The best way to use this app is to provide 3-5 accounts that are in similar networks (can be tied together through a topic, like longevity or systems science, or through general interests/activity). 
+    **there are a handful of prefetched groups for you to choose from in the dropdown below!**
+
+    Once you have this account, two things will happen: 
+    1. Account Recommendations: find accounts that fit with these seed users.
+    2. Tweet Filtering/Sorting: select custom time ranges and use metrics like like_count or reply_count to surface tweets.
+    """
+)
 available_groups = ["create new group"]
 for obj in minio_client.list_objects("stream-seeding", recursive=False):
     available_groups.append(obj.object_name)
-group = st.selectbox("Select Pre-fetched group below... Leave blank if you want to create a new group", available_groups)
+st.subheader("Select Group")
+group = st.selectbox("choose the 'create new group' option if you want to add usernames for a new group below", available_groups)
 
 
 if "new_user_group" not in st.session_state:
