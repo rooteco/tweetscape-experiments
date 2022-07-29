@@ -1,0 +1,123 @@
+---
+date: July 29, 2022
+author: nicktorba
+title: product update 07-29-2022
+summary: account recommendations, datasets, and nlp
+---
+
+> ![Venn Diagram](/ss/Product-Update-07-29-2022/julian-venn-diagram1.png)
+
+If you want to get emails when we post new product updates, you can **sign up [here](https://twitter.com/i/newsletters/subscribe/TweetscapeHQ)**! 
+
+# Tweetscape Product Update, 07/29/2022
+
+Over the last year, I’ve often found myself thinking “The hard part is figuring out what people want. Building it would be easy.” And that sounds nice, until you figure out what people want, and it turns out that it’s actually very hard to build…
+
+Well, here we are. It turns out that taking the sprawling mess that makes twitter, twitter, and grouping it in ways that are useful, interesting and sensible is actually… pretty hard. Update: Julian corrected me. He said that it is fun. We're both right. It is the fun kind of hard. 
+
+## Get a Feel for Streams
+
+I’m a big fan of the image Julian created that I shared in a tweet this week: 
+
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">i want my twitter to feel like this <a href="https://t.co/DwEV2YmjAs">pic.twitter.com/DwEV2YmjAs</a></p>&mdash; Nick Torba (@nicktorba) <a href="https://twitter.com/nicktorba/status/1552702381107957762?ref_src=twsrc%5Etfw">July 28, 2022</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+It gives a great feel of the type of experience we want to build. Current twitter keeps you stuck in A, but many of us are dying for a better way to segment that into focused streams that fit our interests. 
+
+Of course, there are lists. But the more people I talk to, the more people I meet who have tried and failed at creating lists that work for them. 
+
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">I think that’s what lists are for, but I don’t use them.</p>&mdash; danielle (@danielleboccell) <a href="https://twitter.com/danielleboccell/status/1552706061743923200?ref_src=twsrc%5Etfw">July 28, 2022</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+Another friend explained all the work it would take to make this a reality now: 
+
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">This requires &quot;completeness without overlap&quot;, aka ability to see that the lists I&#39;ve put ppl in 1. Put everyone in at least one list, 2. Put nobody in 2 lists. UX now makes this a nightmare. You have to check one at a time. It&#39;s like 5 clicks. Hundreds of accounts.</p>&mdash; Airship⚛️Evangelist (@repost_offender) <a href="https://twitter.com/repost_offender/status/1553115970188611584?ref_src=twsrc%5Etfw">July 29, 2022</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+And here is another reply with my take on why lists and communities don’t meet the mark. 
+
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">for lists, the UX is bad and it shows by how few people use them, even when they &quot;feel like they should&quot;<br/><br/>communities are nice in theory, but applying top-down organization is anti-twitter. the solution needs to be bottoms up <a href="https://t.co/rmGCJVFfg3">https://t.co/rmGCJVFfg3</a></p>&mdash; Nick Torba (@nicktorba) <a href="https://twitter.com/nicktorba/status/1553100763429232640?ref_src=twsrc%5Etfw">July 29, 2022</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+I hadn't been tweeting much recently. It felt good to tap back into the hive mind and get useful thoughts and feedbacks on our thoughts. I should probably keep doing that... 
+
+# Account Recommendations
+
+[Last week](https://tweetscape.co/blog/productupdate-07-22-2022), I said I was going to deploy an app to show some simple account recommendation methods. [**Here it is!**](https://tweetscape-experiments-seeded-streams.fly.dev/)
+
+This “experiment” is nice, but it’s not really an experiment. It’s a fun little tool with some bugs. 
+
+However, it did generate some excitement:
+
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Oh the account recommendation method is suuuuppeeer cool and stands out a lot<br/><br/>Both &quot;min seed acct followed by&quot; and &quot;multiple interactions&quot;. Seemed relevant for the longevity example!</p>&mdash; pranab (@altsanabo) <a href="https://twitter.com/altsanabo/status/1552725550854131712?ref_src=twsrc%5Etfw">July 28, 2022</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+I tried to clearly lay out the logic and functionality in the app, but it still needs a lot of work. If you have any thoughts, as always, [DM ME](https://twitter.com/nicktorba)!
+
+I still think there are a lot of simple methods (I'd just call them "low hanging fruits", but that term has been ruined for me) for useful like this that people will be happy to use, especially when the mechanisms that make them work are transparent. 
+
+# Andre’s Grind: Advanced NLP
+
+Andre spent this week using a doc similarity matrix between the tweets of different groups of users to make account recommendations - a much different strategy than the following and interaction based methods I used above. 
+
+This process generated many more questions than answers, but in the good way. Here are a couple of images Julian created to help visualize our current thinking. 
+
+> ![Venn Diagram](/ss/Product-Update-07-29-2022/julian-venn-diagram1.png)
+
+> ![Venn Diagram](/ss/Product-Update-07-29-2022/julian-venn-diagram2.png)
+
+In addition, here are some of the questions we’re thinking about, in no particular order: 
+
+- how large of a dataset do we need?
+- what can we use as labels?
+    - current lists?
+    - current communities?
+    - replies?
+- What should we use as the base unit for analysis
+    - obvious answer: tweets
+        - what’s the minimum length a tweet should be to be included?
+    - less obvious:
+        - threads
+        - [conversation_id](https://developer.twitter.com/en/docs/twitter-api/conversation-id)
+- Should we use keyword filters to make datasets better for specific tasks?
+- How much should we consider external context of a tweet?
+    - media and external urls
+    - referenced tweets
+    
+
+An important part of our work next week is creating a list of detailed questions we want to answer and experiments we want to run to test them. 
+
+These will range from more simple methods, like pulling the overlapping keywords between users, to more advanced methods using large language models. 
+
+## Intentional Experiments
+
+On top of creating a better defined list of questions, we are also going to outline clear, intentional experiments. The point of the small experiments is to put our different hypotheses to the test. To do that reliably, we need to design our experiments in a way that makes it clear if the users were able to accomplish a specific goal. 
+
+Next weeks product update will have more details on how those experiments will be structured! 
+
+## Un1feed
+
+[My friend Kenny](https://twitter.com/kenny_avallon) sent me the Instagram equivalent of Tweetscape this week - [Un1feed](https://www.un1feed.com/). It’s looks like a very cool project. 
+
+What surprised me was how similar the copy on their website is to the copy we used on our [first landing page mockup](https://www.figma.com/proto/KVsHFNPGd6zo3nQ40U5R8C/Tweetscape-%2F-Landingpage-%2F-Mockups?page-id=0%3A1&node-id=1%3A427&viewport=332%2C358%2C0.15&scaling=min-zoom&starting-point-node-id=1%3A427&show-proto-sidebar=1). 
+
+Them: 
+> Custom Feeds, create feeds to match your interests
+
+Us: 
+> streams allow you to efficiently organize the content you’re interested in
+
+> Easily explore topics you want to learn more about
+    
+    
+
+I’m gonna reach out to their team soon to get to know them and learn more about how they are thinking about the space. 
+
+# bye, bye, bye
+
+That’s it for this week. See you next time! 
+
+### P.S. 
+
+Roote has dope merch. Here’s a pic of me being a cool kid with our bentoism quadrant shirt. 
+
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr"><a href="https://twitter.com/roote_?ref_src=twsrc%5Etfw">@roote_</a> definitely has my favorite swag of any company i&#39;ve worked for <a href="https://t.co/l0Fl6irUql">pic.twitter.com/l0Fl6irUql</a></p>&mdash; Nick Torba (@nicktorba) <a href="https://twitter.com/nicktorba/status/1553125818045538304?ref_src=twsrc%5Etfw">July 29, 2022</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+Hit me up if you want one! We have more!
