@@ -19,3 +19,4 @@ notebooks/reply-views/basic.conf
 *.env
 python/notebooks/stream-seeding/data
 *-checkpoint.ipynb
+python/notebooks/semantics/
