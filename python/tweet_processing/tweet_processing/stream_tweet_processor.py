@@ -6,7 +6,6 @@ from stqdm import stqdm
 import pandas as pd
 from tweet_processing import pull_tweets, get_user_following
 
-
 class StreamTweetProcessor:
     def __init__(self, twarc_client, minio_client, bucket):
         self.twarc_client = twarc_client
@@ -46,6 +45,7 @@ class StreamTweetProcessor:
             self.remote_write_seed_df(f"{group_name}/{type_}.csv", df_)
         return df_following, df_tweets, df_ref_tweets
 
+class RemoteStreamTweetProcessor(StreamTweetProcessor):
     def remote_write_seed_df(self, object_fpath, df):
         """
         bucket: minio bucket to write to
