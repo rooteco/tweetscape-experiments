@@ -15,7 +15,6 @@ load_dotenv()
 
 converter = DataFrameConverter("users", allow_duplicates=True)
 
-
 def lookup_users_by_username(client, usernames): 
     def hit_twitter():
         user_gen = client.user_lookup(users=usernames, usernames=True)
@@ -29,12 +28,14 @@ def lookup_users_by_username(client, usernames):
             else: 
                 df_users = pd.concat([df_users, df_next])
         return df_users
+    df_users = None
     retries = 5
     while retries: 
         try: 
             df_users = hit_twitter()
         except HTTPError as err: 
             retries -= 1
+            print(f"{retries} retries left")
         else: 
             break
     return df_users
