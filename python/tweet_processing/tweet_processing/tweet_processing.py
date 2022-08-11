@@ -18,7 +18,7 @@ load_dotenv()
 
 converter = DataFrameConverter("tweets", allow_duplicates=True)
 
-def pull_tweets(client, username, extract_features=True, max_tweets=1000):
+def pull_tweets(client, username, extract_features=True, max_tweets=1000, start_time=None):
     df_tweets = None
     df_ref_tweets = None
 
@@ -31,7 +31,7 @@ def pull_tweets(client, username, extract_features=True, max_tweets=1000):
     else: 
         id_ = id_res["data"][0]["id"]
     # id_ =  [i for i in client.user_lookup(users=[username], usernames=True)][0]["data"][0]["id"]
-    timeline_gen = client.timeline(id_, max_results=100)
+    timeline_gen = client.timeline(id_, max_results=100, start_time=start_time)
     try: 
         max_pages = max_tweets // 100
         cur_page = 0
@@ -56,16 +56,25 @@ def pull_tweets(client, username, extract_features=True, max_tweets=1000):
     except HTTPError as err: 
         print(f"400 client error for id {id_}... skipping")
         return username, None, None
+    print("printing dfs")
+    if df_tweets is None: 
+        return username, None, None # TODO: make this more rigorous
+
+    print(type(df_tweets))
+    print(df_tweets.shape)
+
     if extract_features: 
         for df_ in [df_tweets, df_ref_tweets]:
-            df_["entities.mentions.usernames"] = df_["entities.mentions"].apply(extract_usernames)
-            df_["entities.mentions.num_mentions"] = df_["entities.mentions"].apply(extract_num_mentions)
-            df_["entities.mentions.double_mention"] = df_["entities.mentions"].apply(extract_double_mention)
-            df_["tweet_type"] = df_.apply(lambda x: extract_tweet_type(x), axis=1)
-            df_["tweet_link"] = df_.apply(lambda row: f"https://twitter.com/{row['author.username']}/status/{row.id}", axis=1)
-            df_.loc[:, "created_at"] = pd.to_datetime(df_.loc[:, "created_at"], utc=True)
-            df_["created_at.hour"] = df_["created_at"].dt.floor('h')
-    df_ref_tweets["referencer.username"] = username # make it possible for me to get the id of the account who referenced this tweet
+            if df_ is not None: 
+                df_["entities.mentions.usernames"] = df_["entities.mentions"].apply(extract_usernames)
+                df_["entities.mentions.num_mentions"] = df_["entities.mentions"].apply(extract_num_mentions)
+                df_["entities.mentions.double_mention"] = df_["entities.mentions"].apply(extract_double_mention)
+                df_["tweet_type"] = df_.apply(lambda x: extract_tweet_type(x), axis=1)
+                df_["tweet_link"] = df_.apply(lambda row: f"https://twitter.com/{row['author.username']}/status/{row.id}", axis=1)
+                df_.loc[:, "created_at"] = pd.to_datetime(df_.loc[:, "created_at"], utc=True)
+                df_["created_at.hour"] = df_["created_at"].dt.floor('h')
+    if df_ref_tweets is not None: 
+        df_ref_tweets["referencer.username"] = username # make it possible for me to get the id of the account who referenced this tweet
     return username, df_tweets, df_ref_tweets 
 
 def get_time_interval(hours=24):
