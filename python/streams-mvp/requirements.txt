@@ -1,0 +1,9 @@
+python-dotenv
+streamlit-aggrid
+twarc
+twarc_csv
+pandas 
+numpy
+python-dotenv
+minio
+stqdm
