@@ -26,3 +26,4 @@ python/streamlit_twitter_feed/streamlit_twitter_feed/frontend/build
 python/streamlit_twitter_feed/streamlit_twitter_feed/frontend/node_modules
 *-egg-info
 python/streamlit_twitter_feed/streamlit_twitter_feed.egg-info/top_level.txt
+python/streamlit_twitter_feed/build
