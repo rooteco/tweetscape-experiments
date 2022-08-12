@@ -7,13 +7,16 @@ import streamlit.components.v1 as components
 from st_aggrid import AgGrid, GridUpdateMode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 from stqdm import stqdm
+from minio import Minio, error
 from functools import partial
 from dotenv import load_dotenv
-from twarc import Twarc2, expansions
+from twarc import Twarc2
 
-from streamlit_twitter_feed import streamlit_twitter_feed
+from streamlit_twitter_feed import streamlit_twitter_feed, _RELEASE
 
 load_dotenv()
+
+from io import BytesIO
 
 
 from tweet_processing import StreamTweetProcessor, get_time_interval, lookup_users_by_username
@@ -21,7 +24,55 @@ from tweet_processing import get_user_following, pull_tweets
 
 data_dir = "data/current"
 
+host = "localhost:9000" if not _RELEASE else "experiment-data-minio.internal:9000"
+MINIO_CLIENT = Minio(
+    host, 
+    access_key=os.environ["MINIO_ROOT_USER"],
+    secret_key=os.environ["MINIO_ROOT_PASSWORD"],
+    secure=False
+)
 
+BUCKET = "streams-mvp"
+TOP_FOLDER = "current"
+
+def minio_path_exists():
+    __docstring = """
+    replace calls to os.path.exists
+    """
+    pass 
+
+def minio_to_csv(df, path):
+    # def remote_write_seed_df(self, object_fpath, df):
+    __docstring = """
+    bucket: minio bucket to write to
+    object_fpath: fpath of object to write to
+    df: the dataframe to save
+    """
+
+    # follows_fpath = os.path.join(data_dir, "following", f"{username}_following.csv")
+
+    csv_bytes = df.to_csv(index=False).encode('utf-8')
+    csv_buffer = BytesIO(csv_bytes)
+    write_result = MINIO_CLIENT.put_object(
+        BUCKET, #bucket-name,
+        path,
+        # f'{group_name}/following.csv',#bucket-path
+        data=csv_buffer,
+        length=len(csv_bytes),
+        content_type='application/csv'
+    )
+    return write_result
+
+def minio_read_csv(path):
+    __docstring = """
+    replace calls to df.to_csv
+    """
+    read_res = MINIO_CLIENT.get_object(
+        BUCKET, 
+        path
+    )
+    df = pd.read_csv(BytesIO(read_res.data))
+    return df
 
 def lookup_users(usernames):
     """
@@ -88,12 +139,18 @@ def build_group_list():
     # errors = ["yoyoufakeadsf", "nowaysfdsfdsimreal"]
 
     for username, user_data in successful_userdata.items():
-        follows_fpath = os.path.join(data_dir, "following", f"{username}_following.csv")
-        if os.path.exists(follows_fpath):
-            df_following = pd.read_csv(follows_fpath)
-        else: 
-            df_following = get_user_following(twarc_client, username)
-            df_following.to_csv(follows_fpath, index=False)
+        follows_fpath = os.path.join(TOP_FOLDER, "following", f"{username}_following.csv")
+        # if os.path.exists(follows_fpath):
+            # df_following = pd.read_csv(follows_fpath)
+        try:     
+            df_following = minio_read_csv(follows_fpath)
+        except error.S3Error as err:
+            if err.message == "The specified key does not exist.":
+                df_following = get_user_following(twarc_client, username)
+                # df_following.to_csv(follows_fpath, index=False)
+                minio_to_csv(df_following, follows_fpath)
+            else: 
+                raise Exception(f"Got unexpected error key: {err.message}")            
         st.session_state.seed_accounts[username] = {}
         st.session_state.seed_accounts[username]["following"] = df_following
         st.session_state.seed_accounts[username]["user_data"] = user_data
@@ -151,47 +208,29 @@ def recommend_by_following(df_following):
     overlap_df = pd.DataFrame(df_data, columns=["profile_image_url", "followed.username", "stream_users", "num_stream_users", "num_followers_of_followed", "profile_link"])
     overlap_df["num_stream_users"].value_counts()
     return overlap_df 
-    # NUM_SEED_ACCOUNTS = 3
-    # minimum_seed_accounts = st.number_input(
-    #     "minimum number seed accounts followed by",
-    #     min_value=1, 
-    #     max_value=df_following["referencer.username"].nunique()+1, 
-    #     value=df_following["referencer.username"].nunique()
-    # )
-    # present_df = overlap_df[overlap_df["num_stream_users"]>=minimum_seed_accounts].sort_values("num_followers_of_followed")
-    # max_show = st.slider("num recommendations to show", min_value=1, max_value=present_df.shape[0], value=5)
-    # st.write(f"showing {max_show} recommended accounts, sorted by follower count")
-    # for index, row in present_df.iloc[:max_show].iterrows():
-    #     st.markdown(f"![profile_image]({row.profile_image_url}), {row['followed.username']}, num_followers={row.num_followers_of_followed}, [profile_link]({row.profile_link})", unsafe_allow_html=True)
-
+    
 def get_feed(start_time, selected_rows):
-    print("woah")
     fetch_usernames = list(st.session_state.seed_accounts) + [i["username"] for i in selected_rows] #list(st.session_state.selected_recommended_users)
     # fetch_usernames = [username for username in usernames if username not in st.session_state.current_feed_users_dict]
     twitter_fetch_usernames = []
     for i_username in fetch_usernames: 
-        tweets_fpath = os.path.join(data_dir, "tweets", f"{i_username}_tweets.csv")
-        ref_tweets_fpath = os.path.join(data_dir, "ref_tweets", f"{i_username}_ref_tweets.csv")
-        if os.path.exists(tweets_fpath):
-            st.session_state.current_feed_users_dict[i_username] = {}
-            st.session_state.current_feed_users_dict[i_username]["tweets"] = pd.read_csv(tweets_fpath)
-        if os.path.exists(ref_tweets_fpath):
-            st.session_state.current_feed_users_dict[i_username]["ref_tweets"] = pd.read_csv(ref_tweets_fpath)
-        else: 
+        tweets_fpath = os.path.join(TOP_FOLDER, "tweets", f"{i_username}_tweets.csv")
+        ref_tweets_fpath = os.path.join(TOP_FOLDER, "ref_tweets", f"{i_username}_ref_tweets.csv")
+        st.session_state.current_feed_users_dict[i_username] = {}
+        try:     
+            df = minio_read_csv(tweets_fpath) 
+        except error.S3Error as err:
             twitter_fetch_usernames.append(i_username)
-   # with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-    #     futures = {executor.submit(pull_tweets, twarc_client, username, start_time=start_time): username for username in twitter_fetch_usernames}
-    #     progress_bar = stqdm
-    #     for future in progress_bar(concurrent.futures.as_completed(futures), total=len(usernames)):
-    #         i_username, i_df_tweets, i_df_ref_tweets = future.result()
-    #         st.session_state.current_feed_users_dict[i_username] = {}
-    #         st.session_state.current_feed_users_dict[i_username]["start_time"] = start_time
-    #         st.session_state.current_feed_users_dict[i_username]["tweets"] = i_df_tweets
-    #         st.session_state.current_feed_users_dict[i_username]["ref_tweets"] = i_df_ref_tweets
-    #         tweets_fpath = os.path.join(data_dir, "tweets", f"{username}_tweets.csv")
-    #         ref_tweets_fpath = os.path.join(data_dir, "ref_tweets", f"{username}_ref_tweets.csv")
-    #         i_df_tweets.to_csv(tweets_fpath, index=False)
-    #         i_df_ref_tweets.to_csv(ref_tweets_fpath, index=False)
+            print(f"key {tweets_fpath} not found, adding to list of names to fetch")
+        else: 
+            st.session_state.current_feed_users_dict[i_username]["tweets"] = df
+
+        try:     
+            df = minio_read_csv(ref_tweets_fpath) 
+        except error.S3Error as err:
+            print(f"key {tweets_fpath} not found, adding to list of names to fetch")
+        else: 
+            st.session_state.current_feed_users_dict[i_username]["ref_tweets"] = df
 
     progress_bar = stqdm
     for i_username in twitter_fetch_usernames:
@@ -205,109 +244,104 @@ def get_feed(start_time, selected_rows):
         st.session_state.current_feed_users_dict[i_username]["start_time"] = start_time
         st.session_state.current_feed_users_dict[i_username]["tweets"] = i_df_tweets
         st.session_state.current_feed_users_dict[i_username]["ref_tweets"] = i_df_ref_tweets
-        tweets_fpath = os.path.join(data_dir, "tweets", f"{i_username}_tweets.csv")
-        ref_tweets_fpath = os.path.join(data_dir, "ref_tweets", f"{i_username}_ref_tweets.csv")
+        tweets_fpath = os.path.join(TOP_FOLDER, "tweets", f"{i_username}_tweets.csv")
+        ref_tweets_fpath = os.path.join(TOP_FOLDER, "ref_tweets", f"{i_username}_ref_tweets.csv")
         if i_df_tweets is not None:
-            i_df_tweets.to_csv(tweets_fpath, index=False)
+            # i_df_tweets.to_csv(tweets_fpath, index=False)
+            minio_to_csv(i_df_tweets, tweets_fpath)
         if i_df_ref_tweets is not None:
-            i_df_ref_tweets.to_csv(ref_tweets_fpath, index=False)
+            minio_to_csv(i_df_ref_tweets, ref_tweets_fpath)
+            # i_df_ref_tweets.to_csv(ref_tweets_fpath, index=False)
 
-with st.expander("Search for Seed Users", expanded=True):
-    still_creating_group = True
-    selected = st.text_input("search for users", "artirkel,celinehalioua,laurademing", on_change=build_group_list, key="user_text_key")
-    # button_clicked = st.button("Create New Group with currently selected users")
-    st.write(f"current seed users: {list(st.session_state.seed_accounts.keys())}")
-    if len(st.session_state.error_user_group):
-        st.warning(f"errors adding following users: {list(st.session_state.error_user_group)}. Please check your entry and try again for these")
+def show_app():
+    with st.expander("Search for Seed Users", expanded=True):
+        still_creating_group = True
+        selected = st.text_input("search for users", "artirkel,celinehalioua,laurademing", on_change=build_group_list, key="user_text_key")
+        # button_clicked = st.button("Create New Group with currently selected users")
+        st.write(f"current seed users: {list(st.session_state.seed_accounts.keys())}")
+        if len(st.session_state.error_user_group):
+            st.warning(f"errors adding following users: {list(st.session_state.error_user_group)}. Please check your entry and try again for these")
 
 
-with st.sidebar:
-    rec_method = st.radio("recommendation method", ["follows", "interaction"])
-    include_tweets_from_seed_accounts = st.checkbox("Include Tweets from Seed Accounts?")
-    tweet_types = ['reply', 'qt,mention', 'rt', 'rt,mention', 'self-reply,mention',
-       'standalone,mention', 'qt,reply', 'self-reply', 'standalone', 'qt']
-    selected_tweet_types = st.multiselect(
-        'which types of tweets to include',
-        tweet_types,
-        default=tweet_types
-    )
+    with st.sidebar:
+        rec_method = st.radio("recommendation method", ["follows", "interaction"])
+        include_tweets_from_seed_accounts = st.checkbox("Include Tweets from Seed Accounts?")
+        tweet_types = ['reply', 'qt,mention', 'rt', 'rt,mention', 'self-reply,mention',
+        'standalone,mention', 'qt,reply', 'self-reply', 'standalone', 'qt']
+        selected_tweet_types = st.multiselect(
+            'which types of tweets to include',
+            tweet_types,
+            default=tweet_types
+        )
 
-col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-with col1:
-    st.subheader("Seed Users")
-    # dictionary checkbox trick from: https://stackoverflow.com/questions/66718228/select-multiple-options-in-checkboxes-in-streamlit/66738130#66738130
-    # seeded_users = {
-    #     username: st.checkbox(username, True) for username in st.session_state.seed_accounts
-    # }
-
-    data = {"username": list(st.session_state.seed_accounts)}
-    df = pd.DataFrame(data)
-    gd = GridOptionsBuilder.from_dataframe(df)
-    gd.configure_selection(selection_mode='multiple', use_checkbox=True, pre_selected_rows=list(df.index))
-    gd.configure_default_column(min_column_width=2)
-    # gd.configure_auto_height(True)
-    gridoptions = gd.build()
-    seed_grid_table = AgGrid(
-        df, 
-        height=115, 
-        fit_columns_on_grid_load=True,
-        gridOptions=gridoptions,
-        update_mode=GridUpdateMode.SELECTION_CHANGED,
-    )
-
-    selected_seed_rows = seed_grid_table["selected_rows"]
-
-    st.subheader("Recommended Users")
-    df_following_list = [v["following"] for k, v in st.session_state.seed_accounts.items()]
-    if len(df_following_list):
-        if rec_method == "follows":
-            df_following = pd.concat(df_following_list)
-            overlap_df = recommend_by_following(df_following)
-        else: 
-            raise Exception("Not implemented yet...")
-
-        present_df = overlap_df[overlap_df["num_stream_users"]>=3].sort_values(["num_stream_users","num_followers_of_followed"])
-        st.write(f"{present_df.shape[0]} accounts recommended")
-        # st.write(f"currently selected users = {st.session_state.selected_recommended_users}")
-        # st.session_state.recced_users_dict = {
-        #     row["followed.username"]: st.checkbox(
-        #         f"{row['followed.username']}, num_seed_users_followed_by={row['num_stream_users']}, num_followers={row['num_followers_of_followed']}", 
-        #         on_change=partial(checkbox_func, selected_username=row["followed.username"]),
-        #         ) for _, row in present_df.iterrows()
+    with col1:
+        st.subheader("Seed Users")
+        # dictionary checkbox trick from: https://stackoverflow.com/questions/66718228/select-multiple-options-in-checkboxes-in-streamlit/66738130#66738130
+        # seeded_users = {
+        #     username: st.checkbox(username, True) for username in st.session_state.seed_accounts
         # }
 
-        data = {
-            "username": [],
-            "num_followers": [],
-            "num_seed_users_followed_by": [], 
-        }
-        for _, row in present_df.iterrows():
-            data["username"].append(row['followed.username'])
-            data["num_seed_users_followed_by"].append(row["num_stream_users"])
-            data["num_followers"].append(row["num_followers_of_followed"])
-
+        data = {"username": list(st.session_state.seed_accounts)}
         df = pd.DataFrame(data)
-        df = df[["username", "num_followers", "num_seed_users_followed_by"]]
         gd = GridOptionsBuilder.from_dataframe(df)
-        gd.configure_selection(selection_mode='multiple', use_checkbox=True)
+        gd.configure_selection(selection_mode='multiple', use_checkbox=True, pre_selected_rows=list(df.index))
+        gd.configure_default_column(min_column_width=2)
+        # gd.configure_auto_height(True)
         gridoptions = gd.build()
+        seed_grid_table = AgGrid(
+            df, 
+            height=115, 
+            fit_columns_on_grid_load=True,
+            gridOptions=gridoptions,
+            update_mode=GridUpdateMode.SELECTION_CHANGED,
+        )
 
-        grid_table = AgGrid(df, height=250, gridOptions=gridoptions,
-                            update_mode=GridUpdateMode.SELECTION_CHANGED)
+        selected_seed_rows = seed_grid_table["selected_rows"]
 
-        st.write('## Selected')
-        selected_rows = grid_table["selected_rows"]
-        # st.write(selected_rows[0])
-        df = pd.DataFrame(selected_rows)
-        st.dataframe(df)#, "num_seed_users_followed_by", "num_followers"]])
+        st.subheader("Recommended Users")
+        df_following_list = [v["following"] for k, v in st.session_state.seed_accounts.items()]
+        selected_rows=[]
+        if len(df_following_list):
+            if rec_method == "follows":
+                df_following = pd.concat(df_following_list)
+                overlap_df = recommend_by_following(df_following)
+            else: 
+                raise Exception("Not implemented yet...")
 
-_, start_time = get_time_interval(hours=24*28)
+            present_df = overlap_df[overlap_df["num_stream_users"]>=3].sort_values(["num_stream_users","num_followers_of_followed"])
+            st.write(f"{present_df.shape[0]} accounts recommended")
 
-with col2:
-    st.subheader("your feed")
-    
-    if st.checkbox("generate_feed"):
+            data = {
+                "username": [],
+                "num_followers": [],
+                "num_seed_users_followed_by": [], 
+            }
+            for _, row in present_df.iterrows():
+                data["username"].append(row['followed.username'])
+                data["num_seed_users_followed_by"].append(row["num_stream_users"])
+                data["num_followers"].append(row["num_followers_of_followed"])
+
+            df = pd.DataFrame(data)
+            df = df[["username", "num_followers", "num_seed_users_followed_by"]]
+            gd = GridOptionsBuilder.from_dataframe(df)
+            gd.configure_selection(selection_mode='multiple', use_checkbox=True)
+            gridoptions = gd.build()
+
+            grid_table = AgGrid(df, height=250, gridOptions=gridoptions,
+                                update_mode=GridUpdateMode.SELECTION_CHANGED)
+
+            st.write('## Selected')
+            selected_rows = grid_table["selected_rows"]
+            # st.write(selected_rows[0])
+            df = pd.DataFrame(selected_rows)
+            st.dataframe(df)#, "num_seed_users_followed_by", "num_followers"]])
+
+    _, start_time = get_time_interval(hours=24*28)
+
+    with col2:
+        st.subheader("your feed")
         get_feed(start_time, selected_seed_rows+selected_rows)
         feed_usernames = [i["username"] for i in selected_seed_rows+selected_rows]
         df_feed = None 
@@ -351,5 +385,36 @@ with col2:
             ].to_dict("records")
             num_clicks = streamlit_twitter_feed("World", tweets, key="unique")
 
-st.markdown("""<hr style="height:10px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
+    st.markdown("""<hr style="height:10px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
+
+has_twitter_token = False 
+
+if has_twitter_token:
+    show_app() 
+
+else: 
+    import streamlit.components.v1 as components
+    request_token_url = 'https://api.twitter.com/oauth/request_token'
+    access_token_url = 'https://api.twitter.com/oauth/access_token'
+    authorize_url = 'https://api.twitter.com/oauth/authorize'
+    show_user_url = 'https://api.twitter.com/1.1/users/show.json'
+
+    import tweepy
+
+    oauth2_user_handler = tweepy.OAuth2UserHandler(
+        client_id="23539682",
+        redirect_uri="localhost:8501",
+        scope=['tweet.read',
+        'tweet.write',
+        'users.read',
+        'follows.read',],
+        # Client Secret is only necessary if using a confidential client
+        # client_secret="Client Secret here"
+    )
+    st.write(oauth2_user_handler.get_authorization_url())
+    access_token = oauth2_user_handler.fetch_token(
+        "localhost:8501"
+    )
+    # components.iframe("https://www.baidu.com")
+    # st.button("Login With Twitter")
 
