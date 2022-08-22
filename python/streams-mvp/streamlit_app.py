@@ -1,6 +1,7 @@
 import os
 import concurrent.futures
 import requests
+from time import sleep
 import pandas as pd
 import streamlit as st 
 import streamlit.components.v1 as components
@@ -11,6 +12,7 @@ from minio import Minio, error
 from functools import partial
 from dotenv import load_dotenv
 from twarc import Twarc2
+import tweepy
 
 from streamlit_twitter_feed import streamlit_twitter_feed, _RELEASE
 
@@ -34,6 +36,10 @@ MINIO_CLIENT = Minio(
 
 BUCKET = "streams-mvp"
 TOP_FOLDER = "current"
+
+CONSUMER_KEY = os.environ["consumer_key"]
+CONSUMER_SECRET = os.environ["consumer_secret"]
+AUTH = tweepy.OAuth1UserHandler(CONSUMER_KEY, CONSUMER_SECRET,callback="oob")
 
 def minio_path_exists():
     __docstring = """
@@ -74,6 +80,14 @@ def minio_read_csv(path):
     df = pd.read_csv(BytesIO(read_res.data))
     return df
 
+def init_twarc_client():
+    return Twarc2(
+            consumer_key=os.environ["consumer_key"], 
+            consumer_secret=os.environ["consumer_secret"],
+            access_token=st.session_state.oauth_objects["access_token"],
+            access_token_secret=st.session_state.oauth_objects["access_token_secret"],
+        )
+
 def lookup_users(usernames):
     """
     
@@ -83,7 +97,7 @@ def lookup_users(usernames):
         successful_users (dict): dict of metadata for the user as retreived from twitter
         error_usernames (list): list of usernames that were not successfully found
     """
-    user_gen = twarc_client.user_lookup(users=usernames, usernames=True)
+    user_gen = init_twarc_client().user_lookup(users=usernames, usernames=True)
     successful_users = {}
 
     successful_usernames = []
@@ -98,12 +112,11 @@ def lookup_users(usernames):
                 error_usernames.append(error["value"])
     return successful_users, error_usernames
 
-twarc_client = Twarc2(
-    consumer_key=os.environ["consumer_key"], 
-    consumer_secret=os.environ["consumer_secret"],
-    access_token=os.environ["access_token"], 
-    access_token_secret=os.environ["access_token_secret"]
-)
+def set_oauth_verifier():
+    ACCESS_TOKEN, ACCESS_TOKEN_SECRET = AUTH.get_access_token(st.session_state.oauth_verifier_verifier_input)
+    AUTH.set_access_token(ACCESS_TOKEN,ACCESS_TOKEN_SECRET)
+    st.session_state.oauth_objects["access_token"] = ACCESS_TOKEN
+    st.session_state.oauth_objects["access_token_secret"] = ACCESS_TOKEN_SECRET
 
 if "seed_accounts" not in st.session_state:
     st.session_state.seed_accounts = {}
@@ -120,7 +133,6 @@ def checkbox_func(selected_username):
         st.session_state.selected_recommended_users.add(selected_username)
     else: 
         st.session_state.selected_recommended_users.remove(selected_username)
-
 
 
 def build_group_list():
@@ -146,7 +158,7 @@ def build_group_list():
             df_following = minio_read_csv(follows_fpath)
         except error.S3Error as err:
             if err.message == "The specified key does not exist.":
-                df_following = get_user_following(twarc_client, username)
+                df_following = get_user_following(init_twarc_client(), username)
                 # df_following.to_csv(follows_fpath, index=False)
                 minio_to_csv(df_following, follows_fpath)
             else: 
@@ -235,7 +247,7 @@ def get_feed(start_time, selected_rows):
     progress_bar = stqdm
     for i_username in twitter_fetch_usernames:
         print(f"fetching tweets for {i_username} since {start_time}")
-        i_username, i_df_tweets, i_df_ref_tweets = pull_tweets(twarc_client, i_username, start_time=start_time)
+        i_username, i_df_tweets, i_df_ref_tweets = pull_tweets(init_twarc_client(), i_username, start_time=start_time)
         if i_df_tweets is None: 
             print(f"no tweets found for {i_username}")
             continue
@@ -255,13 +267,18 @@ def get_feed(start_time, selected_rows):
 
 def show_app():
     with st.expander("Search for Seed Users", expanded=True):
-        still_creating_group = True
-        selected = st.text_input("search for users", "artirkel,celinehalioua,laurademing", on_change=build_group_list, key="user_text_key")
-        # button_clicked = st.button("Create New Group with currently selected users")
-        st.write(f"current seed users: {list(st.session_state.seed_accounts.keys())}")
-        if len(st.session_state.error_user_group):
-            st.warning(f"errors adding following users: {list(st.session_state.error_user_group)}. Please check your entry and try again for these")
-
+        if not len(st.session_state.oauth_objects):
+            st.write("Login with twitter to create new lists")
+            if st.button("Sign In With Twitter"):
+                st.text("Go to this link in another tab and grab the pin: ")
+                print("RUNNING AUTH URL LINE OF CODE")
+                st.write(AUTH.get_authorization_url())
+                verifier = st.text_input("Enter PIN: ", False, type="password", on_change=set_oauth_verifier, key="oauth_verifier_verifier_input")
+        else: 
+            selected = st.text_input("search for users", "artirkel,celinehalioua,laurademing", on_change=build_group_list, key="user_text_key")
+            st.write(f"current seed users: {list(st.session_state.seed_accounts.keys())}")
+            if len(st.session_state.error_user_group):
+                st.warning(f"errors adding following users: {list(st.session_state.error_user_group)}. Please check your entry and try again for these")
 
     with st.sidebar:
         rec_method = st.radio("recommendation method", ["follows", "interaction"])
@@ -389,32 +406,8 @@ def show_app():
 
 has_twitter_token = False 
 
-if has_twitter_token:
-    show_app() 
+if "oauth_objects" not in st.session_state:
+    st.session_state["oauth_objects"] = {}
 
-else: 
-    import streamlit.components.v1 as components
-    request_token_url = 'https://api.twitter.com/oauth/request_token'
-    access_token_url = 'https://api.twitter.com/oauth/access_token'
-    authorize_url = 'https://api.twitter.com/oauth/authorize'
-    show_user_url = 'https://api.twitter.com/1.1/users/show.json'
-
-    import tweepy
-
-    oauth2_user_handler = tweepy.OAuth2UserHandler(
-        client_id="23539682",
-        redirect_uri="localhost:8501",
-        scope=['tweet.read',
-        'tweet.write',
-        'users.read',
-        'follows.read',],
-        # Client Secret is only necessary if using a confidential client
-        # client_secret="Client Secret here"
-    )
-    st.write(oauth2_user_handler.get_authorization_url())
-    access_token = oauth2_user_handler.fetch_token(
-        "localhost:8501"
-    )
-    # components.iframe("https://www.baidu.com")
-    # st.button("Login With Twitter")
-
+show_app()
+    
