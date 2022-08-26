@@ -18,7 +18,7 @@ load_dotenv()
 
 converter = DataFrameConverter("tweets", allow_duplicates=True)
 
-def pull_tweets(client, username, extract_features=True, max_tweets=1000, start_time=None):
+def pull_tweets(client, username, extract_features=True, max_tweets=1000, start_time=None, end_time=None):
     df_tweets = None
     df_ref_tweets = None
 
@@ -31,7 +31,7 @@ def pull_tweets(client, username, extract_features=True, max_tweets=1000, start_
     else: 
         id_ = id_res["data"][0]["id"]
     # id_ =  [i for i in client.user_lookup(users=[username], usernames=True)][0]["data"][0]["id"]
-    timeline_gen = client.timeline(id_, max_results=100, start_time=start_time)
+    timeline_gen = client.timeline(id_, max_results=100, start_time=start_time, end_time=end_time)
     try: 
         max_pages = max_tweets // 100
         cur_page = 0
