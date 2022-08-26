@@ -15,7 +15,7 @@ from twarc import Twarc2
 import tweepy
 
 from streamlit_twitter_feed import streamlit_twitter_feed, _RELEASE
-
+import json 
 load_dotenv()
 
 from io import BytesIO
@@ -23,6 +23,9 @@ from io import BytesIO
 
 from tweet_processing import StreamTweetProcessor, get_time_interval, lookup_users_by_username
 from tweet_processing import get_user_following, pull_tweets
+
+
+from streams import BUCKET, Stream 
 
 data_dir = "data/current"
 
@@ -34,39 +37,16 @@ MINIO_CLIENT = Minio(
     secure=False
 )
 
-BUCKET = "streams-mvp"
-TOP_FOLDER = "current"
-
 CONSUMER_KEY = os.environ["consumer_key"]
 CONSUMER_SECRET = os.environ["consumer_secret"]
 AUTH = tweepy.OAuth1UserHandler(CONSUMER_KEY, CONSUMER_SECRET,callback="oob")
 
-SKIP_PIN_AUTH = True 
+SKIP_PIN_AUTH = False 
 
-def minio_path_exists():
-    __docstring = """
-    replace calls to os.path.exists
-    """
-    pass 
+def minio_read_json(path):
+    read_res = MINIO_CLIENT.get_object(BUCKET, path)
+    return json.loads(read_res.data)
 
-def minio_to_csv(df, path):
-    # def remote_write_seed_df(self, object_fpath, df):
-    __docstring = """
-    bucket: minio bucket to write to
-    object_fpath: fpath of object to write to
-    df: the dataframe to save
-    """
-
-    csv_bytes = df.to_csv(index=False).encode('utf-8')
-    csv_buffer = BytesIO(csv_bytes)
-    write_result = MINIO_CLIENT.put_object(
-        BUCKET, #bucket-name,
-        path,
-        data=csv_buffer,
-        length=len(csv_bytes),
-        content_type='application/csv'
-    )
-    return write_result
 
 def minio_read_csv(path):
     __docstring = """
@@ -79,17 +59,11 @@ def minio_read_csv(path):
     df = pd.read_csv(BytesIO(read_res.data))
     return df
 
-def minio_write_json(obj, path):
-    import json
-    obj_s = json.dumps(obj, indent=4)
-    write_result = MINIO_CLIENT.put_object(
-        BUCKET, #bucket-name,
-        path,
-        data=BytesIO(obj_s.encode("utf-8")),
-        length=len(obj_s),
-        content_type='application/json'
-    )
-    return write_result
+def minio_path_exists():
+    __docstring = """
+    replace calls to os.path.exists
+    """
+    pass 
 
 def init_twarc_client():
     if SKIP_PIN_AUTH:
@@ -106,93 +80,46 @@ def init_twarc_client():
             access_token_secret=st.session_state.oauth_objects["access_token_secret"],
         )
 
-def lookup_users(usernames):
-    """
-    
-        usernames (list): list of usernames to lookup
-
-    Returns:
-        successful_users (dict): dict of metadata for the user as retreived from twitter
-        error_usernames (list): list of usernames that were not successfully found
-    """
-    user_gen = init_twarc_client().user_lookup(users=usernames, usernames=True)
-    successful_users = {}
-
-    successful_usernames = []
-    error_usernames = []
-    for res in user_gen:
-        if "data" in res:
-            for user_data in res["data"]:
-                successful_usernames.append(user_data["username"])
-                successful_users[user_data["username"]] = user_data
-        if "errors" in res:
-            for error in res["errors"]:
-                error_usernames.append(error["value"])
-    return successful_users, error_usernames
-
 def set_oauth_verifier():
     ACCESS_TOKEN, ACCESS_TOKEN_SECRET = AUTH.get_access_token(st.session_state.oauth_verifier_verifier_input)
     AUTH.set_access_token(ACCESS_TOKEN,ACCESS_TOKEN_SECRET)
     st.session_state.oauth_objects["access_token"] = ACCESS_TOKEN
     st.session_state.oauth_objects["access_token_secret"] = ACCESS_TOKEN_SECRET
 
-if "seed_accounts" not in st.session_state:
-    st.session_state.seed_accounts = {}
-    st.session_state.error_user_group = set()
-    # st.session_state.recced_users_dict = {}
-    # st.session_state.selected_recommended_users = set()
-    st.session_state.current_feed_users_dict = {}
-
-def checkbox_func(selected_username):
-    print('CHECKBOX CLICKED')
-    print(st.session_state.recced_users_dict)
-
-    if st.session_state.recced_users_dict[selected_username] is False:
-        st.session_state.selected_recommended_users.add(selected_username)
-    else: 
-        st.session_state.selected_recommended_users.remove(selected_username)
-
-
-def build_group_list():
-    print(f"I'm in build group list with input {st.session_state.user_text_key}")
-    print(f"current user group session: {st.session_state.seed_accounts}")
-
+def add_seed_users():
     usernames = [i.strip() for i in st.session_state.user_text_key.split(",")]
-    print("USERNAMES")
-    print(usernames)
     usernames = [i for i in usernames if len(i)>0]
     if len(usernames) < 1:
         return [], []
+    st.session_state.stream.add_seed_users(usernames, init_twarc_client())
 
+def update_load_stream_name():
+    print("YOU LOADED AGAIN")
+    st.write("YO")
+    st.write(st.session_state.load_stream_name_input)
+    st.session_state.stream.load(st.session_state.load_stream_name_input)
+    st.session_state.load_stream_name = st.session_state.load_stream_name_input
+    ### Keeping this as their own state vars until I can debug reload issues more... 
+    st.session_state.all_recommended_users = st.session_state.stream.all_recommended_users
+    st.session_state.selected_recommended_users = st.session_state.stream.selected_recommended_users
 
-    stream = Stream(usernames)
-
-    successful_userdata, errors = lookup_users(usernames)
-
-    for username, user_data in successful_userdata.items():
-        follows_fpath = os.path.join(TOP_FOLDER, "following", f"{username}_following.csv")
-        # if os.path.exists(follows_fpath):
-            # df_following = pd.read_csv(follows_fpath)
-        try:     
-            df_following = minio_read_csv(follows_fpath)
-        except error.S3Error as err:
-            if err.message == "The specified key does not exist.":
-                df_following = get_user_following(init_twarc_client(), username)
-                # df_following.to_csv(follows_fpath, index=False)
-                minio_to_csv(df_following, follows_fpath)
-            else: 
-                raise Exception(f"Got unexpected error key: {err.message}")
-
-        ## all of this moves to Stream() object... 
-        # We keep stream in RAM until we hit save...? maybe?             
-        st.session_state.seed_accounts[username] = {}
-        st.session_state.seed_accounts[username]["following"] = df_following
-        st.session_state.seed_accounts[username]["user_data"] = user_data
+def update_load_stream_name_after_save():
+    st.session_state.available_streams.append(st.session_state.stream.get_name())
+    st.session_state.load_stream_name_input = st.session_state.stream.get_name()
     
-    for username in errors: 
-        # st.warning(f"User '{username}' not found, please check your entry and try again")
-        st.session_state.error_user_group.add(username)
-
+def load_stream(stream_name):
+    stream_config = minio_read_json(os.path.join(stream_name, "stream_config.json"))
+    for username in stream_config["seed_accounts"].keys():
+        following_fpath = os.path.join(stream_name, "seed_accounts_following", f"{username}_following.csv")
+        df_following = minio_read_csv(following_fpath)
+        stream_config["seed_accounts"][username]["following"] = df_following
+    return Stream(
+        end_time=stream_config["end_time"],
+        start_time=stream_config["start_time"],
+        seed_accounts=stream_config["seed_accounts"],
+        recommended_users=stream_config["recommended_users"],
+        selected_recommended_users=stream_config["selected_recommended_users"]
+    )
 
 @st.cache
 def recommend_by_following(df_following):
@@ -224,10 +151,9 @@ def recommend_by_following(df_following):
 
     following_overlap = {}
 
-
     for stream_user, following in users_following.items():
         for followed_user in following: 
-            following_overlap.setdefault(followed_user, []).append(stream_user)
+            following_overlap.setdefault(followed_user, []).append(stream_user) # add the stream user that follows this account
 
     df_data = []
 
@@ -243,127 +169,88 @@ def recommend_by_following(df_following):
     overlap_df["num_stream_users"].value_counts()
     return overlap_df 
     
-def get_feed(selected_rows, start_time, end_time):
-    feed_config = {
-        "seed_accounts": list(st.session_state.seed_accounts.keys()),
-        "recommended_accounts": [i for i in list(st.session_state.current_feed_users_dict.keys()) if i not in st.session_state.seed_accounts], 
-        "start_time": start_time,
-        "end_time": end_time,
-    }
-
-    fetch_usernames = list(st.session_state.seed_accounts) + [i["username"] for i in selected_rows] #list(st.session_state.selected_recommended_users)
-    # fetch_usernames = [username for username in usernames if username not in st.session_state.current_feed_users_dict]
-    twitter_fetch_usernames = []
-    for i_username in fetch_usernames: 
-        tweets_fpath = os.path.join(TOP_FOLDER, "tweets", f"{i_username}_tweets.csv")
-        ref_tweets_fpath = os.path.join(TOP_FOLDER, "ref_tweets", f"{i_username}_ref_tweets.csv")
-        st.session_state.current_feed_users_dict[i_username] = {}
-        try:     
-            df = minio_read_csv(tweets_fpath) 
-        except error.S3Error as err:
-            twitter_fetch_usernames.append(i_username)
-            print(f"key {tweets_fpath} not found, adding to list of names to fetch")
-        else: 
-            st.session_state.current_feed_users_dict[i_username]["tweets"] = df
-
-        try:     
-            df = minio_read_csv(ref_tweets_fpath) 
-        except error.S3Error as err:
-            print(f"key {tweets_fpath} not found, adding to list of names to fetch")
-        else: 
-            st.session_state.current_feed_users_dict[i_username]["ref_tweets"] = df
-
-        config_fpath = os.path.join(TOP_FOLDER, "feed_config.json")
-    
-    minio_write_json(feed_config, config_fpath)
-
-    for i_username in twitter_fetch_usernames:
-        print(f"fetching tweets for {i_username} since {start_time}")
-        i_username, i_df_tweets, i_df_ref_tweets = pull_tweets(init_twarc_client(), i_username, start_time=start_time)
-        if i_df_tweets is None: 
-            print(f"no tweets found for {i_username}")
-            continue
-        print(f"{i_df_tweets.shape[0]} tweets for {i_username}")
-        st.session_state.current_feed_users_dict[i_username] = {}
-        st.session_state.current_feed_users_dict[i_username]["start_time"] = start_time
-        st.session_state.current_feed_users_dict[i_username]["tweets"] = i_df_tweets
-        st.session_state.current_feed_users_dict[i_username]["ref_tweets"] = i_df_ref_tweets
-        tweets_fpath = os.path.join(TOP_FOLDER, "tweets", f"{i_username}_tweets.csv")
-        ref_tweets_fpath = os.path.join(TOP_FOLDER, "ref_tweets", f"{i_username}_ref_tweets.csv")
-        if i_df_tweets is not None:
-            # i_df_tweets.to_csv(tweets_fpath, index=False)
-            minio_to_csv(i_df_tweets, tweets_fpath)
-        if i_df_ref_tweets is not None:
-            minio_to_csv(i_df_ref_tweets, ref_tweets_fpath)
-            # i_df_ref_tweets.to_csv(ref_tweets_fpath, index=False)
-
-def save_current_stream():
-    pass
-
-def show_app():
-    with st.expander("Search for Seed Users", expanded=True):
-        if not len(st.session_state.oauth_objects):
-            st.write("Login with twitter to create new lists")
-            if st.button("Sign In With Twitter"):
-                st.text("Go to this link in another tab and grab the pin: ")
-                print("RUNNING AUTH URL LINE OF CODE")
-                st.write(AUTH.get_authorization_url())
-                verifier = st.text_input("Enter PIN: ", False, type="password", on_change=set_oauth_verifier, key="oauth_verifier_verifier_input")
-        else: 
-            selected = st.text_input("search for users", "artirkel,celinehalioua,laurademing", on_change=build_group_list, key="user_text_key")
-            st.write(f"current seed users: {list(st.session_state.seed_accounts.keys())}")
-            if len(st.session_state.error_user_group):
-                st.warning(f"errors adding following users: {list(st.session_state.error_user_group)}. Please check your entry and try again for these")
-
-    with st.sidebar:
-        rec_method = st.radio("recommendation method", ["follows", "interaction"])
-        tweet_types = ['reply', 'qt,mention', 'rt', 'rt,mention', 'self-reply,mention',
-        'standalone,mention', 'qt,reply', 'self-reply', 'standalone', 'qt']
-        selected_tweet_types = st.multiselect(
-            'which types of tweets to include',
-            tweet_types,
-            default=tweet_types
+if "oauth_objects" not in st.session_state:
+    if SKIP_PIN_AUTH:
+        st.session_state.oauth_objects = {"a": "yo"}
+    else: 
+        st.session_state.oauth_objects = {}
+if "stream" not in st.session_state: 
+    end_time, start_time = get_time_interval(hours=24*14)
+    st.session_state.stream = Stream(
+            end_time,
+            start_time
         )
+if "available_streams" not in st.session_state:
+    st.session_state.available_streams = ["start new"] + [i.object_name for i in MINIO_CLIENT.list_objects(BUCKET)]
 
-    col1, col2 = st.columns(2)
+if "load_stream_name" not in st.session_state:
+    st.session_state.load_stream_name = "start new"
+if "all_recommended_users" not in st.session_state:
+    st.session_state.all_recommended_users = []
+if "selected_recommended_users" not in st.session_state:
+    print("RESTING SELECTED")
+    st.session_state.selected_recommended_users = []
+else: 
+    print("here is selected users list form the or else of the initializer")
+    print(st.session_state.selected_recommended_users)
 
-    with col1:
-        st.subheader("Seed Users")
-        # dictionary checkbox trick from: https://stackoverflow.com/questions/66718228/select-multiple-options-in-checkboxes-in-streamlit/66738130#66738130
-        # seeded_users = {
-        #     username: st.checkbox(username, True) for username in st.session_state.seed_accounts
-        # }
+# with st.expander("Choose a Stream to Start With", expanded=False):
+st.selectbox(
+    "load stream", 
+    st.session_state.available_streams,
+    on_change=update_load_stream_name,
+    key="load_stream_name_input"      
+)
 
-        data = {"username": list(st.session_state.seed_accounts)}
-        df = pd.DataFrame(data)
-        gd = GridOptionsBuilder.from_dataframe(df)
-        gd.configure_selection(selection_mode='multiple', use_checkbox=True, pre_selected_rows=list(df.index))
-        gd.configure_default_column(min_column_width=2)
-        # gd.configure_auto_height(True)
-        gridoptions = gd.build()
-        seed_grid_table = AgGrid(
-            df, 
-            height=115, 
-            fit_columns_on_grid_load=True,
-            gridOptions=gridoptions,
-            update_mode=GridUpdateMode.SELECTION_CHANGED,
-        )
+# with st.expander("Search for and Add Seed Users", expanded=False):
+if not len(st.session_state.oauth_objects):
+    st.write("Login with twitter to create new streams!")
+    if st.button("Sign In With Twitter"):
+        st.text("Go to this link in another tab and grab the pin: ")
+        st.write(AUTH.get_authorization_url())
+        verifier = st.text_input("Enter PIN: ", False, type="password", on_change=set_oauth_verifier, key="oauth_verifier_verifier_input")
+else: 
+    selected = st.text_input("search for users", value="", on_change=add_seed_users, key="user_text_key")
+    st.write(f"current seed users: {list(st.session_state.stream.seed_accounts.keys())}")
+    st.write(f"current stream time frame: `{st.session_state.stream.start_time}` to `{st.session_state.stream.end_time}`")
+    if len(st.session_state.stream.last_failed_lookup):
+        st.warning(f"errors adding following users: {list(st.session_state.stream.last_failed_lookup)}. Please check your entry and try again for these")
 
-        selected_seed_rows = seed_grid_table["selected_rows"]
+with st.sidebar:
+    rec_method = st.radio("recommendation method", ["follows", "interaction"])
+    tweet_types = ['reply', 'qt,mention', 'rt', 'rt,mention', 'self-reply,mention',
+    'standalone,mention', 'qt,reply', 'self-reply', 'standalone', 'qt']
+    selected_tweet_types = st.multiselect(
+        'which types of tweets to include',
+        tweet_types,
+        default=tweet_types
+    )
 
-        # Stream().add_selected_users()
-        # Stream().update_selected_users()
 
-        st.subheader("Recommended Users")
+def display_seed_accounts():
+    st.subheader("Seed Users")
+    data = {"username": list(st.session_state.stream.seed_accounts.keys())}
+    df = pd.DataFrame(data)
+    gd = GridOptionsBuilder.from_dataframe(df)
+    gd.configure_selection(selection_mode='multiple', use_checkbox=True, pre_selected_rows=list(df.index))
+    gd.configure_default_column(min_column_width=2)
+    # gd.configure_auto_height(True)
+    gridoptions = gd.build()
+    seed_grid_table = AgGrid(
+        df, 
+        height=115, 
+        fit_columns_on_grid_load=True,
+        gridOptions=gridoptions,
+        update_mode=GridUpdateMode.SELECTION_CHANGED,
+    )
+    # selected_seed_rows = seed_grid_table["selected_rows"]
 
-        # Stream() will actually be in object in streamlit session state
-        # recommended_users = Stream().get_recommended_users(
-        #     rec_method="following", 
-        #     num_seed_accounts_following=2
-        # )
-
-        df_following_list = [v["following"] for k, v in st.session_state.seed_accounts.items()]
-        selected_rows=[]
+def display_recommendations():
+    st.subheader("Recommended Users")
+    if len(st.session_state.stream.seed_accounts) < 2:
+        st.write("Add at least 2 seed accounts to generate a feed")
+    else: 
+        df_following_list = [v["following"] for k, v in st.session_state.stream.seed_accounts.items()]
         if len(df_following_list):
             if rec_method == "follows":
                 df_following = pd.concat(df_following_list)
@@ -371,7 +258,8 @@ def show_app():
             else: 
                 raise Exception("Not implemented yet...")
 
-            present_df = overlap_df[overlap_df["num_stream_users"]>=3].sort_values(["num_stream_users","num_followers_of_followed"])
+            num_stream_users = st.slider("number of stream users", min_value=1, max_value=len(df_following_list), value=len(df_following_list))
+            present_df = overlap_df[overlap_df["num_stream_users"]>=num_stream_users].sort_values(["num_stream_users","num_followers_of_followed"])
             st.write(f"{present_df.shape[0]} accounts recommended")
 
             data = {
@@ -379,6 +267,7 @@ def show_app():
                 "num_followers": [],
                 "num_seed_users_followed_by": [], 
             }
+
             for _, row in present_df.iterrows():
                 data["username"].append(row['followed.username'])
                 data["num_seed_users_followed_by"].append(row["num_stream_users"])
@@ -386,50 +275,76 @@ def show_app():
 
             df = pd.DataFrame(data)
             df = df[["username", "num_followers", "num_seed_users_followed_by"]]
+
             gd = GridOptionsBuilder.from_dataframe(df)
-            gd.configure_selection(selection_mode='multiple', use_checkbox=True)
+            df["username"] = [i.lower() for i in df["username"].to_list()]
+
+            # DEBUG
+            # st.write(f"pre selected index: {list(df[df['username'].isin(st.session_state.selected_recommended_users)].index)}")
+            # st.write(f"selected reccs = {st.session_state.selected_recommended_users}")
+
+
+            print("here is the pre selected index")
+            print(
+                list(df[df["username"].isin(st.session_state.selected_recommended_users)].index)
+            )
+            gd.configure_selection(
+                selection_mode='multiple', 
+                use_checkbox=True, 
+                pre_selected_rows=list(df[df["username"].isin(st.session_state.selected_recommended_users)].index)
+            )
             gridoptions = gd.build()
-
-            grid_table = AgGrid(df, height=250, gridOptions=gridoptions,
-                                update_mode=GridUpdateMode.SELECTION_CHANGED)
+            grid_table = AgGrid(
+                df, 
+                height=250, 
+                gridOptions=gridoptions,
+                update_mode=GridUpdateMode.SELECTION_CHANGED
+            )
             selected_rows = grid_table["selected_rows"]
-
-        if st.button("Save Current Stream"):
-            pass 
-            # Stream().save()
-
-
-    end_time, start_time = get_time_interval(hours=24*28)
-
+            st.session_state.SELECTED_ROWS = [i["username"] for i in selected_rows]
+        if st.button("Save Current Stream", on_click=update_load_stream_name_after_save): 
+            # TODO: Save twitter List: https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-create
+            st.session_state.stream.save(
+                all_recommended_users=df["username"].tolist(),
+                selected_recommended_users=[i["username"] for i in selected_rows]
+            )
+## COLUMNS
+if len(st.session_state.stream.seed_accounts):
+    if st.session_state.load_stream_name != "start new":
+        st.write(f"loaded starting stream: {st.session_state.stream.get_name()}")
+    col1, col2 = st.columns(2)
+    with col1:
+        display_seed_accounts()
+        display_recommendations()
     with col2:
-        st.subheader("your feed")
-        feed_config = get_feed(selected_seed_rows+selected_rows, start_time, end_time)
-        feed_usernames = [i["username"] for i in selected_seed_rows+selected_rows]
-        df_feed = None 
-        for username, user_data in st.session_state.current_feed_users_dict.items():
-            if username not in feed_usernames:
-                continue
-            if df_feed is None: 
-                df_feed = user_data["tweets"]
+        if len(st.session_state.stream.seed_accounts) < 2:
+            st.write("Add at least 2 seed accounts to generate a feed")
+        else: 
+            st.subheader("Stream Feed")
+            if "SELECTED_ROWS" in st.session_state:
+                ru = st.session_state.SELECTED_ROWS
             else: 
-                df_feed = pd.concat([df_feed, user_data["tweets"]])
-        if df_feed is not None:
-            df_feed["created_at"] = pd.to_datetime(df_feed["created_at"], utc=True)
-            # st.write(df_feed["author.username"].value_counts())
-            tweets = df_feed.sort_values(["created_at"], ascending=False)
+                ru = []
+            tweets_df = st.session_state.stream.get_feed(
+                init_twarc_client(),
+                recommended_users = ru #st.session_state.selected_recommended_users
+            )
+
+            tweets_df["created_at"] = pd.to_datetime(tweets_df["created_at"], utc=True)
+            tweets_df.sort_values(["created_at"], ascending=False, inplace=True) 
+                
             def filter_by_quantile(group, metric, quantile):
                 thresh = group[f"public_metrics.{metric}"].quantile(quantile)
                 return group[group[f"public_metrics.{metric}"] > thresh]
-
+            
             # tweets = df_feed.groupby(["author.username"]).apply(lambda x: filter_by_quantile(x, "like_count", 0.9)).drop("author.username", axis=1).reset_index()
-
-            tweets["created_at"] = [i.isoformat() for i in tweets["created_at"].to_list()]
-
-            tweets = tweets[tweets["tweet_type"].isin(selected_tweet_types)]
+            tweets_df["created_at"] = [i.isoformat() for i in tweets_df["created_at"].tolist()]
+            tweets_df = tweets_df[tweets_df["tweet_type"].isin(selected_tweet_types)]
 
             # st.write(tweets["author.username"].value_counts())
-            st.dataframe(tweets["author.username"].value_counts())
-            tweets = tweets[
+            # DEBUG
+            # st.dataframe(tweets_df["author.username"].value_counts())
+            tweets_df = tweets_df[
                 [
                     "id",
                     "tweet_link",
@@ -444,20 +359,8 @@ def show_app():
                     "public_metrics.retweet_count"
                 ]
             ].to_dict("records")
+            num_clicks = streamlit_twitter_feed("World", tweets_df, key="unique")
 
-            # tweets = Stream().get_feed()
-
-            num_clicks = streamlit_twitter_feed("World", tweets, key="unique")
-
-    st.markdown("""<hr style="height:10px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
-
-has_twitter_token = False 
-
-if "oauth_objects" not in st.session_state:
-    if SKIP_PIN_AUTH:
-        st.session_state["oauth_objects"] = {"a": "yo"}
-    else: 
-        st.session_state["oauth_objects"] = {}
-
-show_app()
-    
+    st.markdown("""<hr style="height:10px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)        
+else: 
+    st.write("load a previous stream, or login with twitter and seed users to start a new one!")    
