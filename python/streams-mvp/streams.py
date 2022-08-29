@@ -98,14 +98,6 @@ class Stream:
         #2 save the account info for the seed accounts
         self.end_time = end_time  # TODO: add check for formatting of string
         self.start_time = start_time 
-
-        # if twarc_client is None: 
-        #     print("twarc_client is None, so many methods will not yet be available!")
-        #     self.twarc_client = None
-        # elif isinstance(twarc_client, Twarc2): 
-        #     self.twarc_client = twarc_client
-        # else: 
-        #     raise Exception(f"provided twarc_client {twarc_client} is not of required type {Twarc2}")
         self.last_failed_lookup = []
         if isinstance(seed_accounts, dict):
             self.seed_accounts = seed_accounts
@@ -113,25 +105,133 @@ class Stream:
             # self.seed_accounts, _ = self.add_seed_users(seed_accounts) if len(seed_accounts) > 0 else {}, None
             raise Exception("lookup seed users by twitter with `add_seed_users` func")
         self.selected_recommended_users = selected_recommended_users
-        self.recommended_users = recommended_users
+        self.all_recommended_users = recommended_users
         self.tweets = {}
 
-    def to_dict(self):
+    def to_json_safe_dict(self):
+        """
+        Returns: 
+            jsons (str): json string holding all data for the stream. This should be able to be passed directly to load_from_json() func
+        """
+        for username, userdata in self.seed_accounts.items():
+            userdata["following"] = userdata["following"].to_json(orient="records")
+        
+        for username, tweet_data in self.tweets.items():
+            tweet_data["tweets"] = tweet_data["tweets"].to_json(orient="records")
+            if isinstance(tweet_data["ref_tweets"], pd.DataFrame):
+                tweet_data["ref_tweets"] = tweet_data["ref_tweets"].to_json(orient="records")
+            else: 
+                tweet_data["ref_tweets"] = json.dumps(tweet_data["ref_tweets"])
+        
         stream_json = {
+            "name": self.get_name(), 
+            "end_time": self.end_time, 
+            "start_time": self.start_time, 
+            "seed_accounts": json.dumps(self.seed_accounts), 
+            "recommended_users": json.dumps(self.all_recommended_users), 
+            "selected_recommended_users": json.dumps(self.selected_recommended_users),
+            "tweets": json.dumps(self.tweets)
+        }
+        return stream_json 
+
+    def load_from_json_safe_dict(self, stream_config):
+        """
+        Args:
+            jsons (str): json string to load stream data from
+        Returns: 
+        """
+        self.end_time = stream_config[b"end_time"].decode("utf-8")
+        self.start_time = stream_config[b"start_time"].decode("utf-8")
+        self.seed_accounts = json.loads(stream_config[b"seed_accounts"].decode("utf-8"))
+        self.all_recommended_users = json.loads(stream_config[b"recommended_users"].decode("utf-8"))
+        self.selected_recommended_users = json.loads(stream_config[b"selected_recommended_users"].decode("utf-8"))
+        self.tweets = json.loads(stream_config[b"tweets"].decode("utf-8"))
+        for username in self.seed_accounts:
+            self.seed_accounts[username]["following"] = pd.read_json(self.seed_accounts[username]["following"])
+        for username in self.tweets:
+            self.tweets[username]["tweets"] = pd.read_json(self.tweets[username]["tweets"]) if isinstance(self.tweets[username]["tweets"], str) else []
+            self.tweets[username]["ref_tweets"] = pd.read_json(self.tweets[username]["ref_tweets"]) if isinstance(self.tweets[username]["ref_tweets"], str) else []
+
+
+    def save(self, stream_name=None, all_recommended_users=[], selected_recommended_users=[]):
+        """
+        Need figure out structure
+
+        stream-name-directory
+            stream_config.json
+                name
+                end_time
+                start_time
+            seed_accounts_following
+                username1_following.csv
+                username2_follwing.csv
+            tweets
+                username1_tweets.csv
+                username1_ref_tweets.csv
+                username2_tweets.csv
+                username2_ref_tweets.csv
+
+        """
+        BUCKET = "streams-mvp"
+        stream_name = stream_name if stream_name else self.get_name()
+        
+        ### Save df_following for seed accounts
+        # Doing this first to build seed_accounts_userdata for saving the config
+        seed_accounts_following_dir = os.path.join(stream_name, "seed_accounts_following")
+        seed_accounts_userdata = {}
+        for username, data in self.seed_accounts.items():
+            seed_accounts_userdata[username] = {}
+            seed_accounts_userdata[username]["user_data"] = data["user_data"]
+            following_fpath = os.path.join(seed_accounts_following_dir, f"{username}_following.csv")
+            minio_to_csv(data["following"],following_fpath)
+
+        ### Save json Config
+        config_fpath = os.path.join(stream_name, "stream_config.json")
+        config = {
             "name": stream_name, 
             "end_time": self.end_time, 
             "start_time": self.start_time, 
             "seed_accounts": seed_accounts_userdata, 
             "recommended_users": all_recommended_users, 
             "selected_recommended_users": selected_recommended_users,
-            "tweets": {
-
-            }
         }
 
-        {
-            "config": self.config 
-        }
+        write_result = minio_write_json(
+            config, 
+            config_fpath
+        )
+        
+        ### Save tweets for all users
+        tweets_json_fpath = os.path.join(stream_name, "tweets.json")
+        tweets_json =  {username: {} for username in self.tweets}
+        for username in self.tweets:
+            print(f"saving tweets for {username}")
+            tweets_json[username]["tweets"] = self.tweets[username]["tweets"].to_json(orient="records") if len(self.tweets[username]["tweets"])>0 else []
+            tweets_json[username]["ref_tweets"] = self.tweets[username]["ref_tweets"].to_json(orient="records") if len(self.tweets[username]["ref_tweets"]) > 0 else []
+            
+        write_result = minio_write_json(
+            tweets_json, 
+            tweets_json_fpath
+        )
+        return write_result
+
+    def load(self, stream_name):
+        stream_config = minio_read_json(os.path.join(stream_name, "stream_config.json"))
+        for username in stream_config["seed_accounts"].keys():
+            following_fpath = os.path.join(stream_name, "seed_accounts_following", f"{username}_following.csv")
+            df_following = minio_read_csv(following_fpath)
+            stream_config["seed_accounts"][username]["following"] = df_following
+        
+        tweets_json = minio_read_json(os.path.join(stream_name, "tweets.json"))
+        self.tweets =  {username: {} for username in tweets_json}
+        for username in self.tweets:
+            self.tweets[username]["tweets"] = pd.read_json(tweets_json[username]["tweets"]) if isinstance(tweets_json[username]["tweets"], str) else []
+            self.tweets[username]["ref_tweets"] = pd.read_json(tweets_json[username]["ref_tweets"]) if isinstance(tweets_json[username]["ref_tweets"], str) else []
+        self.end_time = stream_config["end_time"]
+        self.start_time = stream_config["start_time"]
+        self.seed_accounts = stream_config["seed_accounts"]
+        self.all_recommended_users = stream_config["recommended_users"]
+        self.selected_recommended_users = stream_config["selected_recommended_users"]
 
     def add_twarc_client(self, twarc_client):
         """
@@ -239,87 +339,6 @@ class Stream:
             selected_recommended_users = stream_config["selected_recommended_users"]
         )
     
-    def save(self, stream_name=None, all_recommended_users=[], selected_recommended_users=[]):
-        """
-        Need figure out structure
-
-        stream-name-directory
-            stream_config.json
-                name
-                end_time
-                start_time
-            seed_accounts_following
-                username1_following.csv
-                username2_follwing.csv
-            tweets
-                username1_tweets.csv
-                username1_ref_tweets.csv
-                username2_tweets.csv
-                username2_ref_tweets.csv
-
-        """
-        BUCKET = "streams-mvp"
-        stream_name = stream_name if stream_name else self.get_name()
-        
-        ### Save df_following for seed accounts
-        # Doing this first to build seed_accounts_userdata for saving the config
-        seed_accounts_following_dir = os.path.join(stream_name, "seed_accounts_following")
-        seed_accounts_userdata = {}
-        for username, data in self.seed_accounts.items():
-            seed_accounts_userdata[username] = {}
-            seed_accounts_userdata[username]["user_data"] = data["user_data"]
-            following_fpath = os.path.join(seed_accounts_following_dir, f"{username}_following.csv")
-            minio_to_csv(data["following"],following_fpath)
-
-        ### Save json Config
-        config_fpath = os.path.join(stream_name, "stream_config.json")
-        config = {
-            "name": stream_name, 
-            "end_time": self.end_time, 
-            "start_time": self.start_time, 
-            "seed_accounts": seed_accounts_userdata, 
-            "recommended_users": all_recommended_users, 
-            "selected_recommended_users": selected_recommended_users,
-        }
-
-        yoooo
-
-        write_result = minio_write_json(
-            config, 
-            config_fpath
-        )
-        
-        ### Save tweets for all users
-        tweets_json_fpath = os.path.join(stream_name, "tweets.json")
-        tweets_json =  {username: {} for username in self.tweets}
-        for username in self.tweets:
-            print(f"saving tweets for {username}")
-            tweets_json[username]["tweets"] = self.tweets[username]["tweets"].to_json(orient="records") if len(self.tweets[username]["tweets"])>0 else []
-            tweets_json[username]["ref_tweets"] = self.tweets[username]["ref_tweets"].to_json(orient="records") if len(self.tweets[username]["ref_tweets"]) > 0 else []
-            
-        write_result = minio_write_json(
-            tweets_json, 
-            tweets_json_fpath
-        )
-        return write_result
-
-    def load(self, stream_name):
-        stream_config = minio_read_json(os.path.join(stream_name, "stream_config.json"))
-        for username in stream_config["seed_accounts"].keys():
-            following_fpath = os.path.join(stream_name, "seed_accounts_following", f"{username}_following.csv")
-            df_following = minio_read_csv(following_fpath)
-            stream_config["seed_accounts"][username]["following"] = df_following
-        
-        tweets_json = minio_read_json(os.path.join(stream_name, "tweets.json"))
-        self.tweets =  {username: {} for username in tweets_json}
-        for username in self.tweets:
-            self.tweets[username]["tweets"] = pd.read_json(tweets_json[username]["tweets"]) if isinstance(tweets_json[username]["tweets"], str) else []
-            self.tweets[username]["ref_tweets"] = pd.read_json(tweets_json[username]["ref_tweets"]) if isinstance(tweets_json[username]["ref_tweets"], str) else []
-        self.end_time = stream_config["end_time"]
-        self.start_time = stream_config["start_time"]
-        self.seed_accounts = stream_config["seed_accounts"]
-        self.all_recommended_users = stream_config["recommended_users"]
-        self.selected_recommended_users = stream_config["selected_recommended_users"]
 
     def delete(self):
         for i in MINIO_CLIENT.list_objects(BUCKET, self.get_name()):
