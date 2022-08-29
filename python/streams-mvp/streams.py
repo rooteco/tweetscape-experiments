@@ -116,6 +116,23 @@ class Stream:
         self.recommended_users = recommended_users
         self.tweets = {}
 
+    def to_dict(self):
+        stream_json = {
+            "name": stream_name, 
+            "end_time": self.end_time, 
+            "start_time": self.start_time, 
+            "seed_accounts": seed_accounts_userdata, 
+            "recommended_users": all_recommended_users, 
+            "selected_recommended_users": selected_recommended_users,
+            "tweets": {
+
+            }
+        }
+
+        {
+            "config": self.config 
+        }
+
     def add_twarc_client(self, twarc_client):
         """
         """
@@ -264,6 +281,8 @@ class Stream:
             "recommended_users": all_recommended_users, 
             "selected_recommended_users": selected_recommended_users,
         }
+
+        yoooo
 
         write_result = minio_write_json(
             config, 

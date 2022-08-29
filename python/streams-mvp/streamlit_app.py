@@ -97,7 +97,11 @@ def update_load_stream_name():
     print("YOU LOADED AGAIN")
     st.write("YO")
     st.write(st.session_state.load_stream_name_input)
+    import time
+    start = time.time()
     st.session_state.stream.load(st.session_state.load_stream_name_input)
+    end = time.time()
+    print(f"it took {end-start} seconds to load {st.session_state.load_stream_name_input}")
     st.session_state.load_stream_name = st.session_state.load_stream_name_input
     ### Keeping this as their own state vars until I can debug reload issues more... 
     st.session_state.all_recommended_users = st.session_state.stream.all_recommended_users
