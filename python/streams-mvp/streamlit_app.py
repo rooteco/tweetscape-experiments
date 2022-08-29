@@ -9,6 +9,7 @@ from st_aggrid import AgGrid, GridUpdateMode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 from stqdm import stqdm
 from minio import Minio, error
+import redis
 from functools import partial
 from dotenv import load_dotenv
 from twarc import Twarc2
@@ -29,6 +30,8 @@ from streams import BUCKET, Stream
 
 data_dir = "data/current"
 
+REDIS_CLIENT = redis.Redis(port=6370, password=os.environ["REDIS_PASSWORD"])
+
 host = "localhost:9000" if not _RELEASE else "experiment-data-minio.internal:9000"
 MINIO_CLIENT = Minio(
     host, 
@@ -41,7 +44,7 @@ CONSUMER_KEY = os.environ["consumer_key"]
 CONSUMER_SECRET = os.environ["consumer_secret"]
 AUTH = tweepy.OAuth1UserHandler(CONSUMER_KEY, CONSUMER_SECRET,callback="oob")
 
-SKIP_PIN_AUTH = False 
+SKIP_PIN_AUTH = True  
 
 def minio_read_json(path):
     read_res = MINIO_CLIENT.get_object(BUCKET, path)
@@ -94,14 +97,20 @@ def add_seed_users():
     st.session_state.stream.add_seed_users(usernames, init_twarc_client())
 
 def update_load_stream_name():
-    print("YOU LOADED AGAIN")
-    st.write("YO")
-    st.write(st.session_state.load_stream_name_input)
     import time
+    
+    print("LOADING TIMEs")
+
     start = time.time()
-    st.session_state.stream.load(st.session_state.load_stream_name_input)
+    loaded_from_redis = REDIS_CLIENT.hgetall(st.session_state.load_stream_name_input)
     end = time.time()
-    print(f"it took {end-start} seconds to load {st.session_state.load_stream_name_input}")
+    print(f"it took {end-start} seconds to load {st.session_state.load_stream_name_input} from redis")
+
+    start = time.time()
+    st.session_state.stream.load_from_json_safe_dict(loaded_from_redis)
+    end=time.time()
+    print(f"it took {end-start} seconds convert dtypes of {st.session_state.load_stream_name_input}")
+
     st.session_state.load_stream_name = st.session_state.load_stream_name_input
     ### Keeping this as their own state vars until I can debug reload issues more... 
     st.session_state.all_recommended_users = st.session_state.stream.all_recommended_users
@@ -185,7 +194,7 @@ if "stream" not in st.session_state:
             start_time
         )
 if "available_streams" not in st.session_state:
-    st.session_state.available_streams = ["start new"] + [i.object_name for i in MINIO_CLIENT.list_objects(BUCKET)]
+    st.session_state.available_streams = ["start new"] + [i.decode("utf-8") for i in REDIS_CLIENT.scan_iter()]
 
 if "load_stream_name" not in st.session_state:
     st.session_state.load_stream_name = "start new"
@@ -308,10 +317,8 @@ def display_recommendations():
             st.session_state.SELECTED_ROWS = [i["username"] for i in selected_rows]
         if st.button("Save Current Stream", on_click=update_load_stream_name_after_save): 
             # TODO: Save twitter List: https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-create
-            st.session_state.stream.save(
-                all_recommended_users=df["username"].tolist(),
-                selected_recommended_users=[i["username"] for i in selected_rows]
-            )
+            REDIS_CLIENT.hmset(st.session_state.stream.get_name(), st.session_state.stream.to_json_safe_dict())
+
 ## COLUMNS
 if len(st.session_state.stream.seed_accounts):
     if st.session_state.load_stream_name != "start new":
