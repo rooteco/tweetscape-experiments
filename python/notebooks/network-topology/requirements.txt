@@ -1,0 +1,7 @@
+twarc
+twarc_csv
+pandas 
+numpy
+python-dotenv
+minio
+stqdm

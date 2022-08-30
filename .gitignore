@@ -17,3 +17,13 @@ node_modules
 *.pyc
 notebooks/reply-views/basic.conf
 *.env
+python/notebooks/stream-seeding/data
+*-checkpoint.ipynb
+python/notebooks/semantics/
+*-checkpoint.ipynb
+python/streams-mvp/data
+python/streamlit_twitter_feed/streamlit_twitter_feed/frontend/build
+python/streamlit_twitter_feed/streamlit_twitter_feed/frontend/node_modules
+*-egg-info
+python/streamlit_twitter_feed/streamlit_twitter_feed.egg-info/top_level.txt
+python/streamlit_twitter_feed/build
