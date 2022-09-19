@@ -1,0 +1,252 @@
+---
+date: August 5, 2022
+author: nicktorba
+title: product update 08-05-2022
+summary: why tweetscape and some dataset ideas
+---
+
+> ![Zooming](/ss/midjourney-philly-skyline.png)
+*Philly Skyline by Midjourney, thanks to Grant Cooper from Future Founders*
+
+
+# Product Update 08-05-2022
+If you want to get emails when we post new product updates, you can **sign up [here](https://twitter.com/i/newsletters/subscribe/TweetscapeHQ)**! 
+
+## Why Tweetscape
+
+In the last couple weeks, our team took the excitement from our last round of interviews, which included 2 people willing to be our first paying customers, and channeled it into technical exploration.
+
+This has led to a lot of interesting technical conversations about possibilities, but also led us back to a divergent state. 
+
+In the midst of that divergence, I wanted to spend some time focusing on why we are building Tweetscape. What problem do all of these technical ideas need to solve? 
+
+To help ground myself in the why, I went back to some of our interviews to pulled some highlighted quotes 
+
+- "The way twitter is organized makes it to hard for me to focus on what I'm working on"
+- "I love twitter. It's just that I am overwhelmed and very busy, so I haven't put in the time to clean it up...”
+    - from someone who has tried and failed creating a system of lists
+- "It is really tricky to get into a new topic.. it feels like 'I don't want to mess up my existing account'"
+    - "How can I go learn about X twitter, but not have it take over my timeline?"
+- "I'm not excited by 'new,' but I am excited to get help figuring out what to prioritize"
+- "I know I need to be on there for my job, but it doesn't tell me what matters to me...”
+    - "Sometimes, I want to be able to switch off X"
+- "I want complete control over what I see"
+    - this is the type of thought people have when they realize how true “media codes humans” is
+- “I wish there was a weekend (aka non-work) mode”
+
+These quotes point us to our why. 
+
+Our interviewees have a deep respect for the twitter. They know that smart people post cool stuff there. At the same time, a lot of other people post a lot of other things. 
+
+There is a **focus problem** and a **curation problem.** 
+
+Tweetscape exists to help solve the focus and curation problems. We want to help productive people take advantage of the *learning* and *social* potential of twitter, without the anxiety of feeling like they need to be on the app all the time to not miss important things. 
+
+## Tweetscape Mission
+
+Give people more control over the information that codes them. 
+
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">DNA codes life.<br/><br/>Programs code computers.<br/><br/>Media codes humans.</p>&mdash; Rhys Lindmark (@RhysLindmark) <a href="https://twitter.com/RhysLindmark/status/1540015828325875712?ref_src=twsrc%5Etfw">June 23, 2022</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+__Tweetscape exists to give you more control over your own media encoding.__ 
+
+You can leave it up to the whims of the algorithm, or you can craft an environment based on what you really want to learn about (with a little algorithmic serendipity thrown in there for good measure, of course). 
+
+### How does Tweetscape Fit
+
+One thing we don’t want to forget is what twitter does well, which is giving users access to **the flood** of info for large, live events. 
+
+I saw twitter used to access the real time flood on the Fourth of July this year, as I watched the fireworks over the parkway in Philadelphia while police officers were fired at. Although this was a sad, horrifying, dystopian moment, it was a clear example of what twitter is best at. 
+
+While I watched the fireworks from my friend’s apartment, crowds of people suddenly ran in many different directions - it was chaos. We weren’t sure what was happening, but minutes later there were tweets sent out informing us of an active shooter, with updates on the situation coming every few minutes. I hardly ever use twitter in this way. I was impressed at how well my friends were able to find so much real time information about the situation.
+
+A much lighter example of this live conversation is how people who watch shows like The Bachelor use twitter. On commercial breaks they fire up the app and laugh as they go through a timeline of live commentary on the last 15 minutes of the episode. It’s pretty incredible to watch this live conversation happen between thousands of people.
+
+However, the emphasis on *right now* makes it hard to use twitter in a more focused mode, like our interviewees want to. Tweetscape fits as the complementary solution to the live info flood that current twitter provides. We want to help users who don’t want to be on all the time not miss the information that matters to them. 
+
+With that said, Tweetscape isn’t a tool meant to be used throughout the day. Instead, it will be a tool that users check periodically - once a day, once a week, once a month, depending on their interests and goals, where they can catch up in an efficient way. 
+
+When users want to experience the flood, they can open the classic bird app and get it.
+
+## Enough about Why, lets talk about How
+
+People agree we should have more control. But there is a lot of disagreement on how that control should be granted. 
+
+I’m hoping that by putting all our ideas for how in one place it will help our team decide on which ones we should try first. 
+
+Luckily for you, that is what we’ve spent the last couple of weeks diverging on! 
+
+### Sources, Streams, Views and Zooming
+
+I introduced sources, streams, and views in the [07-15 Product Update](https://tweetscape.co/blog/productupdate-07-15-2022).
+
+One of the issues with our **original prototype** is that the categorized feeds are too general. Hive clusters are massive, and just because someone is highly ranked in the Bitcoin community doesn’t mean they always tweet about bitcoin. Accounts that post about many varying topics make it much harder to reliably [nerdsnipe](https://twitter.com/nicktorba/status/1555520552055586824?s=20&t=t6bGMzNpzmmPIq8maTPU_w) yourself on a specific topic. 
+
+However, we need to start somewhere, and for users who are completely new to a certain topic, starting with a wide net like a Hive cluster could work well, with the right UX. 
+
+That is where zooming comes in. 
+
+The combination of sources, streams and views will allow users to **zoom in and out** of different *topics* and *communities*. This UX will follow the experience we shared in  [07-15 Product Update](https://tweetscape.co/blog/productupdate-07-15-2022):
+
+> ![Zooming](/ss/product-update-08-05-2022/zooming.png)
+
+Zooming could be done in a variety of ways while starting at a generalized feed
+
+- select tweets you find interesting/relevant
+- select accounts you like
+- select keywords of interest
+- more things i’m sure
+
+Those selections will inform future tweets and feeds from that same group to narrow down to only the most relevant information. 
+
+The zoom in process is how a user could go from a stream about longevity down to a specific stream about cyber-longevity. Then, even an empty stream is a signal for them - meaning there isn’t anything new to catch up on in that community you’ve crafted. 
+
+**Zooming out will be just as important.** 
+
+The zoom out experience is what I explored l[ast week](https://tweetscape.co/blog/productupdate-07-29-2022) when I shared the [Account Recommendations](https://tweetscape-experiments-seeded-streams.fly.dev/) app where you can seed a stream with a handful of accounts and get a list of recommended users based on a couple of different methods. 
+
+If a user is interested in a topic, but only has a couple of accounts they know who tweet about it, we will need to provide ways for them to find the other people interested in that topic. 
+
+All of this will be in an effort to give users a better way to stay up to date on their interests than twitter lists, with their troubles hilariously displayed in this example: 
+
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">a great example of the struggle with lists from <a href="https://twitter.com/andrepology?ref_src=twsrc%5Etfw">@andrepology</a> <a href="https://t.co/VozbuzAmC5">pic.twitter.com/VozbuzAmC5</a></p>&mdash; Nick Torba (@nicktorba) <a href="https://twitter.com/nicktorba/status/1554531186789187584?ref_src=twsrc%5Etfw">August 2, 2022</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+### Lucerne-style “Hard” Feeds
+
+I’ve [tweeted about lucerne](https://twitter.com/search?q=(from%3Anicktorba)%20lucerne&src=typed_query) before - and for good reason: it’s a great idea and tool from [Linus](https://twitter.com/thesephist). 
+
+Linus shared an important insight into his design: 
+
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">He continues &quot;most of my use is exploring and adding to a curated list of filters, and exploration and consumption are one and the same activity.&quot; i love that</p>&mdash; Nick Torba (@nicktorba) <a href="https://twitter.com/nicktorba/status/1522287945398427649?ref_src=twsrc%5Etfw">May 5, 2022</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+> “playing with filters is a primary user interface.”  
+
+> “exploration and consumption are one and the same activity.”
+
+This is a great start towards how I envision the zoom in/out experience I described above. “Exploration and consumption are one and the same.”
+
+One of the problems with lucerne is that it doesn’t assist in the zooming in and zooming out. It doesn’t help with things like account recommendation and it doesn’t help you pick out keywords or select “model tweets.” Users must create Lucerne channels on their own. 
+
+### Stream Exploratory Analysis
+
+Lucerne is a great start, but it can be taken much further. 
+
+There is a lot of simple analysis (simple in this case mostly meaning it wouldn’t require ML models) that could assist stream building. It would largely look like a combo of the [lowbies app](https://tweetscape-experiments-reply-views-streamlit.fly.dev/) and [Account Recommdations app](https://tweetscape-experiments-seeded-streams.fly.dev/), along with more language focused things like analyzing popular keywords among sets of users.
+
+In fact, I think keyword suggestions as a filter will end up being hugely important in Tweetscape streams, but I still need to put that hypothesis to the test with much more exploratory data analysis (EDA) over the next few weeks. 
+
+### Changes Over Time
+
+Another important interest and consideration is how conversations develop over time. 
+
+users want to be able to see **changes** in conversations over time. they want to see a topic “bubbling up” within a certain community. the focus here is not so much “top of the feed” staying up-to-date in real-time, but seeing trends. trends need to reach a certain gravity in order to become relevant and attractors on their own. 
+
+There are a variety of temporal preferences. Some people, especially more social users, will be interested in learning about which words are popular in the **last hour**, while others will be interested in reviewing the **last month.** 
+my feeling is that if we manage to bring the temporal aspect down to something like “this is what happened up until 1h ago”, we already achieve a lot. that would allow us to do the parsing and correlation for a given stream configuration in the background.
+
+a question that comes to mind is: how often to we imagine users opening tweetscape and for what purpose? in the dashboard scenario we need to have much higher frequencies than in the digest scenario.
+
+Also let’s remember that part of our **value propositions is “don’t miss the content that matters for you”**. this leans to a scenario where the user can afford to **not** be present in the moment and look back at relevant events. in their usual modus operandi, **users would come to tweetscape every now and then to “catch up” in an *efficient* way**, but as soon as something “newsworthy” (some catastrophe) happens, they’d probably want to tune into a hashtag and receive live updates. imo what we are working on doesn’t really matter in that scenario because in that mo they’d actually **want to experience the flood.**
+
+# Graph DB Things
+
+One enticing option is the graph db Neo4j. Julian has had good experience working with it before and it fits twitter data extremely well. Using a db to take advantage of that structure could end up being a huge boost for our development. This is something we will explore over the next few weeks. 
+
+### Tweet Network Links and Graph Stuff
+
+There are three different content linkages we are interested in: 
+
+1. Social-social:
+    * `(accountA)-->[follows]--> (accountB)`
+
+2. content-content:
+    * `(tweetA)-->[replies/retweets/quotes]-->(tweetB)`
+
+3. social-content-social:
+    * `(accountA)-->[tweets]-->(tweetA)-->[replies/retweets/quotes]-->(tweetB)<--[tweets]<--(accountB)`
+
+
+The [Account Recommendations](https://tweetscape-experiments-seeded-streams.fly.dev/) app from last week leveraged the linkages in 1 and 3. 
+
+The graphs of 2 and 3 are what we are going to focus on, because they are the most readily available graphs due to twitter rate limits. 
+
+For reference, you can only run 15 follows look-ups calls per 15 minutes, each returning 1000 users. That means you can only pull the following of 15 users in 15 minutes, and that assumes they all follow under 1000 users, which isn’t a safe assumption. 
+
+With that in mind, we think there is a lot of good information to be pulled from the social-content-social network. Our account recommendations using that method have already received good feedback, and we have many more ideas to figure out better ways to determine which entities in that graph have the most gravity. 
+
+Things to figure out about the graph:
+
+- fermi estimate of scaling with number of accounts
+- what to admit into our Tweetscape subgraph db: what will lead to most value in terms of inference/curation, what will help constrain the size of the graph and reduce API calls
+- how to grow the graph given new information
+- how to update/prune the graph periodically
+- Inference:
+    1. How might we treat stream generation as sampling paths from the graph?
+    2. How might we store model outputs (ngrams, keywords, embeddings) on the graph?
+    3. How might we enrich the graph with aggregations (communities/NER) that order the subgraph in service of (1)?
+    4. How to think of a "curation engine" as a high quality social-content graph. And recognising some of the pitfalls/biases around that (gatekeeping)
+
+# Some Dataset and Modeling Ideas
+
+One place where we are going to have to get creative is in the datasets we use. 
+
+This builds even more on questions like “how do we decide which nodes to include in the graph?” 
+
+### Atom-level Data
+
+“atom-level” in this case means the base unit of our dataset. The obvious answer for this is the tweet, which is how we are starting. But, there are some other interesting options we can use as the base level as well, which could help mitigate for some issues like short reply tweets. 
+
+**This is a section I’d love to get ideas for from people on twitter -** so as always, if you have any other ideas, [DM me](https://twitter.com/nicktorba)! ****
+
+- tweets
+    - tweets with replies as some sort of labeling
+    - tweets with quotes as some sort of labeling
+- threads
+- conversations ([conversation_id](https://www.notion.so/Product-Update-08-12-d3a0cec7148f45bcb7572329f501e0ad))
+- entities
+    - urls
+        - also: groups of tweets containing the same url
+    - hashtags
+        - also: groups of tweets with the same hashtag
+    - **NER**
+        - groups of tweets with the same named entity
+        - we are definitely going to want to do NER on this data to make sense of what we are looking at… need to start experimenting with this asap
+
+### Named Entity Recognition
+
+Building custom named entity recognition for tweets is likely going to become very important for us to build streams that meet the high expectations of our users. 
+
+### Using Current Twitter Communities/Lists as Labels
+
+Andre started some of his NLP experiments by taking groups of users seeded around a specific topic, then using a model to predict which of those groups the users should fit into. In other words, it used the grouping as a label. This was with an extremely small dataset (6 accounts), but the results were still interesting. 
+
+To build on that, we are going to create a much larger dataset like this leveraging current twitter users’ lists and communities. 
+
+I’m excited to share the results from those experiments after we build those datasets and run more tests. 
+
+These lists and communities will also be great places for users to start zooming into their interests like I described above. 
+
+## Some Other Things We are Thinking About
+
+- curation is the focus. not discovery. users can already discover enough. they need help figuring out what to pay attention to
+- cool projects people are talking about, that are growing
+- the best articles from a community
+- identifying accounts that fit into a community
+- identifying tweets that fit into a topic
+- identifying entities (accounts or content) with gravity in a community/topic
+- which key words are gaining popularity
+    - why are they popular?
+    - which entities made them popular? which entities talked about them first?
+    - when did a user start tweeting about that key word?
+    - what frequency is it being talked about?
+- Summarize the past week for a specific topic
+    - build on demand summaries/context for new areas of interest
+    - who has gravity in among the network of **these three accounts** I just entered?
+- disconnecting my follows from my content
+    - exploring new subjects without messing up who I follow
+
+# Thanks Again!
+
+If you’ve made it this far, thanks for keeping up with us! 
+
+See you next week.

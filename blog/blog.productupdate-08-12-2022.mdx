@@ -1,0 +1,100 @@
+---
+date: August 12, 2022
+author: nicktorba
+title: product update 08-12-2022 
+summary: the zoom out experience 
+---
+
+# Product Update 08-12
+
+If you want to get emails when we post new product updates, you can **sign up [here](https://twitter.com/i/newsletters/subscribe/TweetscapeHQ)**! 
+
+## Building Streams
+
+Our team was heads down this week working towards the next prototype we want to get in front of new people. 
+
+The prototype builds on the account recommendation app from 2 weeks ago. That app was kinda cool, but didn’t do anything particularly useful. Sure, it shows interesting recommendations, but it doesn’t *actually let you use them.* 
+
+I spent my time this week working towards making those recommendations actionable and interactive. To do this, I started building out a new interface, coarsely shown here: 
+
+> ![lofi mockup](/ss/lofi-account-rec-mock.png)
+
+On the left are the same recommendations from the first version. On the right, is a feed of tweets that is updated based on the accounts that are selected from the list on the left. The idea behind this interface is to give you immediate feedback on how a feed will differ based on which accounts you choose.  
+
+For those interested, I shared a midweek update of the recommender in action [on loom](https://www.loom.com/share/85234930810a4b97824f3d9afdc9f475). It’s clearly not ready to be released, but the main technical functionality is implemented. 
+
+Meanwhile, Julian and Ricardo worked on hi-fidelity UI/UX mockups and dove deeper into the views and filters that will be most important in this prototype. 
+
+Some simple ideas for filters that could include for the generated feed are:
+
+- tweet type (rt, quote tweet, reply, includes media, etc.)
+- date range
+- keywords
+
+I will be able to share more about their thinking in following weeks as they further flesh their ideas!
+
+### Zooming Out
+
+While explaining the account recommendation app to Rhys this week, he asked an important question: “**What does this have to do with streams?”** 
+
+I thought the answer was obvious, but in retrospect, it is clearly not. So, what does account recommending have to with streams anyway? 
+
+To start, [last week](https://tweetscape.co/blog/productupdate-08-05-2022) I wrote about **zooming in** and **zooming out** of different *topics* and *communities* on twitter. Zooming in is when you start with a vast array of options - in a sense, this is what everyone on twitter is doing - then filtering down the information you want to pay attention to. 
+
+On the other hand, zooming out is when you find a new account or topic you like and build more context around that account (who they talk to, what they are talk about, etc.). This is usually done by following more people related to that topic or initial account.
+
+Twitter doesn’t make the zoom in or zoom out experience explicit. Tweetscape will. 
+
+The account recommendation app is the first step towards building a **more deliberate** **zoom out experience**. 
+
+One common complaint about the current twitter UX is that you can’t dive into a new topic or community without mucking up your current follows (as well as not reliably seeing tweets from those new follows). To make matters worse, twitter only suggests accounts after you follow new people (aka “do you always want to follow these 10 accounts” prompts). It doesn’t provide those same recommendations while building lists. Following is a big commitment. List creation is a big hassle. 
+
+Instead, we want to improve this experience by allow you to create streams that aren’t follows, are focused, and help you in the process of zooming out by making useful recommendations.  
+
+The account recommender is the first step, albeit a simple one, towards helping users start small and zoom out to the point where their stream includes the information they want to see. 
+
+## Social Graph vs. Content Graph
+
+I wanted to highlight some awesome discord messages from Julian this week. Sidenote, if you want to get more involved with tweetscape, anyone is welcome to [join our discord](https://discord.gg/PDAPkhNxrC)! 
+
+Here is Julian: 
+
+Picking up on some of the very very early discussions we had around Tweetscape, I find it really interesting to look at the positioning of these projects along the axis of socially centered and content centered.
+To contrast startupy with Borg/hive.one:
+
+> At Borg, we are building "a Google for people." The Discovery of people is broken, and we are fixing it by indexing the social graph like Google indexed the content graph. We started with indexing Twitter. Our index consists of communities we find in Twitter's social graph, and you can explore the indexed communities on our website – hive.one.
+> 
+
+Startupy builds a knowledge graph. They are interested in content. They use people for content curation on scale.
+Hive.one builds a social graph. They are interested in social networks and communities. They look at relationships of people on scale.
+Tweetscape builds a social-content graph. **We are interested in BOTH people and content.**  We look at how content is generated and perceived within social networks.
+
+This has sort of become our dogma over the last weeks and I can't resist the opportunity to manifest it once again: the content itself and the social dynamics of perpetuating the content are deeply intertwined. We need to factor in both to make meaningful recommendations. One is insignificant without the other.**1**
+
+It kind of puts a spin on Nelson:
+
+> "EVERYTHING IS DEEPLY INTERTWINGLED. In an important sense there are no "subjects" at all; there is only all knowledge, since the cross-connections among the myriad topics of this world simply cannot be divided up neatly."
+> 
+
+We put the "subjects" back into the model. Not as "subjects" as in "topics", but as the literal subjects which communicate, the communicative agents. We use people as a factor for disentangling the interrelations of knowledge.
+
+To elaborate a bit more on this... Our goal is to ultimately resolve seeing the relation of content and people as a bipolar axis by integrating it in a higher space:
+Borg establishes a 2d topology of people.
+Startupy establishes a 2d topology of content.
+Tweetscape establishes a 3d space of how people relate to content.
+Borg analyzes social relations to identify groups of experts.
+Startupy uses groups of human experts to look at content.
+Tweetscape looks at content and how people interact with it.
+Instead of establishing who the domain experts are and then relying on their recommendations, a top-down approach, we enable users to give us input on what they perceive as part of a domain, extrapolate from there – both in terms of social discovery and content discovery – and finally let them guide our recommendations through feedback, the combination of that leading to a bottom-up approach which raises the quality of our recommendations on each cycle of the feedback loop. We use human feedback at the end of the recommendation cycle, not at the beginning
+
+I'm also a bit obsessive about bringing this across because that was one of the things that **resonated most when we did the interviews to validate our vision. When people understood that they could seed the content discovery with people AND content, they got really excited.**
+
+Damn Julian, that was good stuff. 
+
+# Adios
+
+The product update is going to be light next week, as I'll be on holiday. After that, I’ll be back to the grind with the rest of the team, working towards getting our first prototype out in front of all of you. 
+
+Thanks again for following along!  
+
+Don’t forget, you can subscribe to get this updates emailed to your every week by following [this link](https://twitter.com/i/newsletters/subscribe/TweetscapeHQ)!

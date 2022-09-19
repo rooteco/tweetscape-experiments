@@ -1,0 +1,74 @@
+---
+date: September 2, 2022
+author: nicktorba
+title: product update 09-02-2022 
+summary: plans to finish 2022 strong
+---
+
+If you want to get emails when we post new product updates, you can **sign up [here](https://twitter.com/i/newsletters/subscribe/TweetscapeHQ)**! 
+
+# Product Update 09-02-2022
+
+Hey everyone, thanks for coming back for another product udpate. This week we have some exciting (scary?) plans for how we are going to end the year. I'm also going to share why there has been a delay in releasing the account recommender app, and some quick thoughts on our latest product thinking. 
+
+## Crunch Time
+
+Roote is all about the abundance mindset. Unfortunately, that doesn't easily apply to all areas of life, especially money. 
+
+The good news is that Julian, Andre and I are going to be working on Tweetscape full-time until the end of the year. The bad news is that the end of the year is when the Tweetscape runway will be gone. With that said, we plan to find new funds for the project by then so we can turn Tweetscape into it's own entity (most likely a [PBC](https://www.kiplinger.com/investing/esg/603598/what-are-public-benefit-corporations-pbcs)) so we can continue working on Tweetscape together.
+
+**If you or anyone you know might be interested in investing, [hit me up](https://twitter.com/nicktorba)!**
+
+## Next Up
+If I were you, I'd be annoyed with me. I've been talking about the account recommender app for too long without a release. 
+
+My first attempts at building the app were with [streamlit](https://streamlit.io/), which is a great way to get a quick UI on top of python code. Unfortunately, the more features I added, the more buggy the interface became (not a fault of the tool, but a fault of me trying to push a data science tool too far against what it is built for). We were always going to switch to a web framework, but I was delaying that process to allow myself to more easily play with the data using python instead of javascript (because of my data science background). 
+
+That said, the UX was too buggy and unreliable to put in front of other people, so I spent this week moving the app over to [remix](https://remix.run/), which is the same framework we've used for our previous prototypes. All of this is to say that I will be working to release the account recommender app (which is better thought of as our first official Tweetscape Streams implementation) by the end of next week, as if my life depends on it, which shouldn't be hard consdiering the money situation I shared earlier...
+
+Along with that, we are going to stop planning and experimenting, and start building the first iteration of the tweet/user/entity graph we've been working on behind the scenes f*or awhile. I'd love to share more about this, but I need to spend all the time I can working on the prototype my life depends on. If all goes according to plan, the feeds in that prototype will be showing you tweets from the graph by next Friday. 
+
+## 10 Believers
+Our main goal for September is to have 10 excited, **paying** users by the end of September. The feedback from these early users will be crucial to what Tweetscape turns into as we sprint towards the end of year building out the ideas we've generated in the last few months.
+
+## Power User Flows
+One of the ideas I thought about a lot this week is power user flows that many twitter users develop after many hours of using twitter. 
+
+A commonly written about, but less commonly practiced flow, is building a collection of lists. 
+
+There are many others as well. Some more simple ones are: 
+* advanced searches for keywords (especially when looking for tweets from specific users including specific keywords)
+* building context around a new profile
+    * click link in bio
+    * read recent tweets as well as tweets and replies (answer questions like "how does this person interact with others?" and "who do they interact with?")
+    * building a personal following criteria answering questions like "how likley am I to see the info this person tweets from other sources?" 
+* muting words to update feed experience
+
+One of the reasons [twemex](https://twemex.app/) is so popular is because it enables new power user flows, especially when viewing new profiles. 
+
+I find twemex espeically helpful when evaluating a new profile. It helps me answer questions like
+* what does this person tweet about?
+* what do they get attention for? 
+* have I ever had a conversation with them? 
+
+Some other questions I have in mind for account evaluation are: 
+* how likely is this person to interact with me? 
+* who do they interact with? how often?
+* what are they an expert in? 
+* what are they interested in? 
+* how likely am I to see the info they tweet from other sources? 
+
+
+A lot of power user flows that come to mind are often account based, but they can work for other entities on twitter as well. 
+
+For tweets, you can look through the quote tweets and replies of a tweet to get a better feel for what others thing about it (I still can't believe how many years I used twitter without scrolling through replies of tweets). It can also help you think about how important or popular an idea is, based on how many people are talking about it, or if any accounts you really respect are talking about it.
+
+For links, you can do things like search twitter for the link to see who else has shared it, which can be surprisingly useful. 
+
+As we build Tweetscape, we are going to base the experience around flows that facilitate understanding and context building around the entities we are interested in. 
+
+**If any other flows come to mind for you while reading this, I'd love to hear about them!**
+
+## See you next week
+Thanks again for following along on our journey. If this is the first time you've read one of our updates, but want to follow along, sign up for our email updates [here](https://twitter.com/i/newsletters/subscribe/TweetscapeHQ)!
+

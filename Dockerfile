@@ -22,8 +22,6 @@ FROM deps as build
 
 WORKDIR /app
 
-ADD prisma .
-RUN yarn prisma generate
 
 ADD . .
 RUN yarn build
@@ -39,7 +37,6 @@ COPY --from=build /app/tsconfig.json /app/tsconfig.json
 COPY --from=build /app/package.json /app/package.json
 COPY --from=build /app/build /app/build
 COPY --from=build /app/public /app/public
-COPY --from=build /app/prisma /app/prisma
 COPY --from=build /app/blog /app/blog
 COPY --from=build /app/app /app/app
 
